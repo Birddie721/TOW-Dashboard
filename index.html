@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TOW Master</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;700;900&family=Inter:wght@400;700&display=swap" rel="stylesheet">
+
+    <style>
+    /* 1. CORE THEME & LAYOUT */
+    :root { --parchment: #fdfaf3; --gothic-gold: #b59b6d; }
+    
+    body { 
+        font-family: 'Inter', sans-serif; 
+        background-color: #f1f1f1; 
+        background-image: url('https://www.transparenttextures.com/patterns/p6-dark.png'); 
+        color: #2d3748; 
+        min-height: 100vh;
+    }
+
+    .serif-header { font-family: 'Crimson Pro', serif; }
+
+    /* 2. UNIT CARD CONTAINER */
+    .unit-card { 
+        background: var(--parchment); 
+        border: 1px solid #e2e8f0; 
+        border-top: 4px solid var(--gothic-gold); 
+        transition: all 0.2s ease; 
+        padding: 1.5rem;
+        border-radius: 0.75rem;
+        margin-bottom: 1rem;
+        display: block;
+    }
+
+    /* 3. UNIT HEADER */
+    .unit-header-block { 
+        display: flex; 
+        justify-content: space-between; 
+        align-items: flex-start; 
+        border-bottom: 1px solid #edf2f7; 
+        padding-bottom: 12px; 
+        margin-bottom: 12px; 
+    }
+
+    /* 4. STAT GRID */
+    .stat-grid { 
+        display: flex; 
+        flex-wrap: nowrap; 
+        background: white; 
+        border: 1px solid #e2e8f0; 
+        border-radius: 6px; 
+        overflow: hidden; 
+        margin-bottom: 8px; 
+    }
+
+    .stat-box { 
+        flex: 1; 
+        text-align: center; 
+        border-right: 1px solid #e2e8f0; 
+        padding: 4px 2px; 
+    }
+
+    .stat-box:last-child { border-right: none; }
+
+    .stat-label { 
+        font-size: 8px; 
+        font-weight: 900; 
+        color: #a0aec0; 
+        text-transform: uppercase; 
+        display: block; 
+    }
+
+    .stat-val { 
+        font-size: 13px; 
+        font-weight: 900; 
+        color: #2d3748; 
+    }
+
+    /* 5. BADGES & NOTES */
+    .parry-badge { 
+        background: #e0f2fe; 
+        color: #0369a1; 
+        border: 1px solid #bae6fd; 
+        font-size: 9px; 
+        padding: 2px 6px; 
+        border-radius: 4px; 
+        font-weight: 800; 
+        display: inline-flex; 
+        align-items: center; 
+        margin-left: 8px; 
+        transition: all 0.2s; 
+        cursor: pointer; 
+    }
+
+    .parry-badge:hover { 
+        background: #bae6fd; 
+        transform: translateY(-1px); 
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05); 
+    }
+
+    .tactical-note { 
+        background: #fffbeb; 
+        color: #92400e; 
+        border: 1px solid #fde68a; 
+        font-size: 9px; 
+        padding: 4px 8px; 
+        border-radius: 4px; 
+        font-weight: 700; 
+        margin-top: 8px; 
+        line-height: 1.2; 
+    }
+
+    /* 6. SECTIONS & LOADING */
+    .section-divider { display: flex; align-items: center; gap: 1rem; margin: 2.5rem 0 1.5rem 0; }
+    .section-divider h3 { font-size: 0.75rem; font-weight: 900; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gothic-gold); white-space: nowrap; }
+    .section-line { height: 1px; background: #cbd5e0; width: 100%; }
+
+    #loadingOverlay { display: none; background: white; position: fixed; inset: 0; z-index: 100; flex-direction: column; align-items: center; justify-content: center; }
+
+    /* 7. RULE DRAWER */
+    #ruleDrawer { 
+        transform: translateX(100%); 
+        transition: transform 0.3s cubic-bezier(0, 0, 0.2, 1); 
+        border-left: 1px solid #cbd5e0; 
+        background: white; 
+        position: fixed; 
+        top: 0; 
+        right: 0; 
+        height: 100%; 
+        width: 100%; 
+        z-index: 60; 
+    }
+    @media (min-width: 768px) { #ruleDrawer { width: 550px; } }
+    
+    .unit-details-row {
+        font-size: 13px;
+        line-height: 1.6;
+        color: #4a5568;
+    }
+
+    .unit-details-row strong {
+        color: #2d3748;
+        text-transform: uppercase;
+        font-size: 11px;
+        letter-spacing: 0.05em;
+    }
+    
+    #ruleDrawer.open { transform: translateX(0); }
+    .drawer-overlay { display: none; background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(4px); position: fixed; inset: 0; z-index: 50; }
+    .drawer-overlay.open { display: block; }
+
+    /* New Points Error Styling */
+    .points-error-glow {
+        border: 2px solid #ef4444 !important;
+        background-color: #fef2f2 !important;
+    }
+</style>
+</head>
+<body class="min-h-screen pb-20">
+
+    <div id="loadingOverlay">
+        <div class="w-12 h-12 border-4 border-slate-200 border-t-[#b59b6d] rounded-full animate-spin mb-4"></div>
+        <p class="serif-header text-lg font-bold text-slate-800">Consulting the Archives...</p>
+    </div>
+
+    <nav class="bg-slate-900 text-white shadow-lg sticky top-0 z-40 border-b-2 border-[#b59b6d]">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <i class="fa-solid fa-book-atlas text-[#b59b6d] text-2xl"></i>
+                <h1 class="serif-header text-2xl font-black tracking-tight uppercase">TOW Master </h1>
+            </div>
+            <button onclick="document.getElementById('fileInput').click()" class="bg-white/10 hover:bg-white/20 border border-white/20 px-5 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2">
+                <i class="fa-solid fa-file-arrow-up"></i> IMPORT OWB JSON
+            </button>
+            <input type="file" id="fileInput" class="hidden" accept=".json">
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto p-6 md:p-10 grid grid-cols-1 lg:grid-cols-4 gap-10">
+        <aside class="space-y-6">
+            <div id="armyMeta" class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 sticky top-24 transition-all duration-300">
+                <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Tactical Summary</h3>
+                <p class="text-sm text-slate-500 italic">No scrolls detected.</p>
+            </div>
+        </aside>
+
+        <main class="lg:col-span-3">
+            <div id="unitContainer" class="flex flex-col gap-4"></div>
+        </main>
+    </div>
+
+    <div id="drawerOverlay" class="drawer-overlay" onclick="closeDrawer()"></div>
+    <div id="ruleDrawer" class="fixed top-0 right-0 h-full w-full md:w-[550px] z-[60] shadow-2xl flex flex-col">
+        <div class="p-4 border-b flex justify-between items-center bg-slate-50">
+            <h2 id="drawerTitle" class="serif-header text-xl font-black uppercase tracking-tight text-slate-800">Reference</h2>
+            <button onclick="closeDrawer()" class="p-2 hover:bg-slate-200 rounded-full transition text-slate-400 text-2xl leading-none">&times;</button>
+        </div>
+        <div class="flex-grow relative">
+            <div id="drawerLoader" class="absolute inset-0 flex items-center justify-center bg-white z-10"><div class="w-8 h-8 border-4 border-slate-200 border-t-[#b59b6d] rounded-full animate-spin"></div></div>
+            <iframe id="ruleFrame" src="" class="w-full h-full border-none"></iframe>
+        </div>
+    </div>
+
+<script>
+    const MOUNT_PATCHES = {
+		"shieldbearers": { "rules": "Borne Aloft, Gromril Weapons, Hatred (Orcs & Goblins), Resolute" },
+		"oathstone": { "rules": "Oathstone" },
+		"barded warhorse": { "rules": "Counter Charge, First Charge, Swiftstride" },
+		"empire warhorse": { "rules": "Fast Cavalry, Swiftstride" },
+		"pegasus": { "rules": "Counter Charge, First Charge, Fly (10), Swiftstride" },
+		"demigryph": { "rules": "Counter Charge, First Charge, Fear, Swiftstride" },
+		"griffon": { "rules": "Close Order, Fly (9), Large Target, Stomp Attacks (D3), Swiftstride, Terror" },
+		"imperial griffon": { "rules": "Close Order, Fly (9), Large Target, Stomp Attacks (D3+1), Swiftstride, Terror" },
+		"war altar of sigmar": { "rules": "Close Order, First Charge, Holy Fervour, Impact Hits (D6+1), Large Target, Magic Resistance (-2), Stubborn, Symbol of Might, Terror, Witch Bane" },
+		"bretonnian warhorse": { "rules": "Counter Charge, Finest Warhorses, First Charge, Swiftstride" },
+		"barded pegasus": { "rules": "Counter Charge, First Charge, Fly (10), Swiftstride" },
+		"royal pegasus": { "rules": "Armour Bane (1,Royal Pegasus only), Counter Charge, First Charge, Fly (10), Stomp Attacks (2), Swiftstride" },
+		"hippogryph": { "rules": "Close Order, Counter Charge, Fly (9), Large Target, Stomp Attacks (D3), Swiftstride, Terror" },
+		"warhorse": { "rules": "Fast Cavalry, Swiftstride" },
+		"unicorn": { "rules": "Armour Bane (2, Unicorn only), Armoured Hide (1), Beguiling Aura, Counter Charge, Magical Attacks, Stomp Attacks (1), Swiftstride" },
+		"elven steed": { "rules": "Fast Cavalry, Swiftstride" },
+		"great stag": { "rules": "Armoured Hide (2), Crown of Antlers, Fear, First Charge, Impact Hits (1), Move through Cover, Stomp Attacks (1), Swiftstride" },
+		"warhawk": { "rules": "Evasive, Fear, Feigned Flight, Fly (10), Swiftstride" },
+		"forest dragon": { "rules": "Close Order, Fly (10), Large Target, Stomp Attacks (D6), Swiftstride, Terror" },
+		"great eagle": { "rules": "Close Order, Fear, Fly (10), Stomp Attacks (1), Swiftstride" },
+		"barded elven steed": { "rules": "Counter Charge, First Charge, Ithilmar Barding, Swiftstride" },
+		"tiranoc chariot": { "rules": "Elven Reflexes, Impact Hits (D6), Open Order, Quick Shot, Swiftstride, Valour of Ages" },
+		"moon dragon": { "rules": "Close Order, Fly (10), Large Target, Stomp Attacks (D6), Swiftstride, Terror" },
+		"star dragon": { "rules": "Close Order, Fly (10), Large Target, Stomp Attacks (D6+1), Swiftstride, Terror" },
+		"lion chariot": { "rules": "Close Order, Elven Reflexes, Fear, First Charge, Impact Hits (D6), Lion Cloak, Stubborn, Valour of Ages" },
+		"lothern skycutter": { "rules": "Close Order, Fear, Fly (10), Elven Reflexes (Sea Guard Crew only), Impact Hits (D3+1), Swiftstride, Valour of Ages" },
+		"sun dragon": { "rules": "Close Order, Fly (10), Impetuous, Large Target, Stomp Attacks (D6), Swiftstride, Terror" },
+		"flamespyre phoenix": { "rules": "Blessings of Asuryan, Close Order, Fear, Flaming Attacks, Fly (10), From the Ashes, Large Target, Stomp Attacks (2), Swiftstride, Wake of Fire" },
+		"frostheart phoenix": { "rules": "Blizzard Aura, Close Order, Fear, Fly (9), Large Target, Stomp Attacks (2), Swiftstride" },
+		"war boar": { "rules": "Armoured Hide (1), Counter Charge, Swiftstride, Tusker Charge" },
+		"boar chariot": { "rules": "Choppas, Close Order, First Charge, Ignore Goblin Panic, Impact Hits (D6+1), Impetuous, Tusker Charge, Warband" },
+		"wyvern": { "rules": "Close Order, Fly (9), Large Target, Stomp Attacks (D3), Swiftstride, Terror" },
+		"giant wolf": { "rules": "Chariot Runners, Fast Cavalry, Fire & Flee, Swiftstride" },
+		"gigantic spider": { "rules": "Armoured Hide (1), Fast Cavalry, Move through Cover, Poisoned Attacks, Swiftstride" },
+		"wolf chariot": { "rules": "Fear of Elves, Impact Hits (D3+1), Impetuous, Open Order, Swiftstride, Warband" },
+		"arachnarok spider": { "rules": "Close Order, Howdah, Immune to Psychology, Large Target, Move through Cover, Poisoned Attacks, Stomp Attacks (D6), Stubborn, Swiftstride, Terror" },
+		"giant cave squig": { "rules": "Armoured Hide (1), Hatred (Dwarfs), Impact Hits (D3), Loner, Random Movement" },
+		"chaos steed": { "rules": "Counter Charge, First Charge, Swiftstride" },
+		"daemonic mount": { "rules": "Armour Bane (1), Daemonic Mount only), Fear, Magical Attacks, Mark of Chaos (as rider), Stomp Attacks (1), Swiftstride" },
+		"chaos chariot": { "rules": "Close Order, Ensorcelled Weapons, First Charge, Impact Hits (D6+1), Mark of Chaos" },
+		"gorebeast chariot": { "rules": "Armour Bane (1, Gorebeast only), Close Order, Ensorcelled Weapons, First Charge, Impact Hits (D6+2), Killing Blow (Gorebeast only), Mark of Chaos" },
+		"manticore": { "rules": "Close Order, Fly (9), Large Target, Stomp Attacks (D3), Swiftstride, Terror, Wilful Beast" },
+		"chaos dragon": { "rules": "Close Order, Fly (10), Impetuous, Large Target, Stomp Attacks (D6), Swiftstride, Terror, Two-headed Dragon" },
+		"tuskgor chariot": { "rules": "Close Order, First Charge, Impact Hits (D6+1), Mark of Chaos Undivided, Primal Fury, Razor Tusks, Warband" },
+		"razorgor chariot": { "rules": "Armour Bane (1, Razorgor only), Close Order, Fear, First Charge, Foe Render (Razorgor only), Impact Hits (D6+2), Mark of Chaos Undivided, Primal Fury, Razor Tusks" },
+		"skeletal steed tomb kings": { "rules": "Nehekharan Undead, Swiftstride, Vanguard" },
+		"skeleton chariot": { "rules": "Dry as Dust, Impact Hits (D3), Nehekharan Undead, Open Order, Reserve Move, Swiftstride" },
+		"necrolith bone dragon": { "rules": "Close Order, Cloud of Dust, Dry as Dust, Fly (9), Indomitable (2), Large Target, Nehekharan Undead, Stomp Attacks (D6), Swiftstride, Terror" },
+		"khemrian warsphinx": { "rules": "Arrows of Asaph, Cleaving Blow (Tomb Guard Crew only), Close Order, Howdah, Indomitable (2), Khopesh (Tomb Guard Crew only), Large Target, Nehekharan Undead, Regeneration (6+), Stomp Attacks (D3), Terror" },
+		"bale taurus": { "rules": "Blazing Body, Born of Fire, Close Order, Fly (9), Furious Charge, Large Target, Stomp Attacks (D3+1), Swiftstride, Terror" },
+		"great taurus": { "rules": "Blazing Body, Born of Fire, Close Order, Fly (9), Furious Charge, Large Target, Stomp Attacks (D3), Swiftstride, Terror" },
+		"lammasu": { "rules": "Armour Bane (2), Close Order, Fly (9), Furious Charge, Large Target, Magic Resistance (-3), Sorcerous Miasma, Stomp Attacks (D3), Swiftstride, Terror" },
+		"juggernaut of khorne": { "rules": "Armoured Hide (1), Daemonic, Daemon of Khorne, First Charge, Impact Hits (2), Swiftstride" },
+		"blood throne of khorne": { "rules": "Close Order, Daemonic, Daemon of Khorne, First Charge, Gorefeast, Impact Hits (D6+1), Impetuous, Totem of Endless Bloodletting" },
+		"palanquin of nurgle": { "rules": "Daemonic, Daemon of Nurgle, Poisoned Attacks, Random Attacks" },
+		"steed of slaanesh": { "rules": "Armour Bane (1, Steed of Slaanesh only), Counter Charge, Daemonic, Daemon of Slaanesh, Fast Cavalry, Poisoned Attacks (Steed of Slaanesh only), Swiftstride" },
+		"seeker chariot": { "rules": "Armour Bane (1, Steed of Slaanesh only), Counter Charge, Daemonic, Daemon of Slaanesh, First Charge, Impact Hits (D3+1), Open Order, Poisoned Attacks (Steed of Slaanesh only), Swiftstride" },
+		"exalted seeker chariot": { "rules": "Armour Bane (1, Steed of Slaanesh only), Close Order, Daemonic, Daemon of Slaanesh, First Charge, Impact Hits (D6+1), Poisoned Attacks (Steed of Slaanesh only)" },
+		"disc of tzeentch": { "rules": "Daemonic, Daemon of Tzeentch, Fly (10), Swiftstride" },
+		"chariot of tzeentch": { "rules": "Close Order, Daemonic, Daemon of Tzeentch, Fly (9), Impact Hits (D6+1), Slashing Attack (Screamers only)" },
+		"burning chariot of tzeentch": { "rules": "Close Order, Daemonic, Daemon of Tzeentch, Fly (9), Impact Hits (D6+1), Lore of Daemons, Slashing Attack (Screamers only)" },
+		"dark steed": { "rules": "Fast Cavalry, Swiftstride" },
+		"cold one": { "rules": "Armour Bane (1, Cold One only), Armoured Hide (1), Fear, First Charge (Dark Elves only), Stupidity, Swiftstride" },
+		"cold one chariot": { "rules": "Armour Bane (1, Cold One only), Close Order, Elven Reflexes, Fear, First Charge, Hatred (High Elves), Impact Hits (D6+1), Stupidity" },
+		"black dragon": { "rules": "Close Order, Fly (10), Hatred (High Elves), Large Target, Stomp Attacks (D6), Swiftstride, Terror" },
+		"dark pegasus": { "rules": "Armour Bane (1, Dark Pegasus only), Counter Charge, First Charge, Fly (10), Swiftstride" },
+		"scourgerunner chariot": { "rules": "Elven Reflexes, Hatred (High Elves), Impact Hits (D6), Open Order, Sea Dragon Cloak, Swiftstride" },
+		"cauldron of blood": { "rules": "Close Order, Dragged Along, Elven Reflexes, Frenzy, Hatred (High Elves), Impact Hits (D6+1), Large Target, Magic Resistance (-1), Murderous, Poisoned Attacks, Terror" },
+		"carnosaur": { "rules": "Blood Frenzy, Close Order, Cold Blooded, Large Target, Stomp Attacks (2), Swiftstride, Terror" },
+		"ancient stegadon": { "rules": "Close Order, Cold Blooded, Howdah, Immune to Psychology, Impact Hits (D3+1), Large Target, Poisoned Attacks (javelins only), Stomp Attacks (D3+2), Stubborn, Terror" },
+		"terradon": { "rules": "Armoured Hide (1), Drop Rocks, Fear, Fly (10), Swiftstride" },
+		"ripperdactyl": { "rules": "Armoured Hide (1), Cleaving Blow (Ripperdactyl only), Fear, Fly (9), Furious Charge (Ripperdactyl only), Impetuous, Swiftstride, Toad Rage" },
+		"stegadon": { "rules": "Close Order, Cold Blooded, Howdah, Immune to Psychology, Impact Hits (D3+1), Large Target, Poisoned Attacks (javelins only), Stomp Attacks (D3+2), Stubborn, Terror" },
+		"stonehorn": { "rules": "Armour Bane (2, Stonehorn only), Close Order, First Charge, Howdah, Impact Hits (D6+1), Large Target, Stone Skeleton, Swiftstride, Terror, Thunderous Charge" },
+		"thundertusk": { "rules": "Close Order, First Charge, Howdah, Impact Hits (D3), Large Target, Numbing Chill, Stomp Attacks (3), Swiftstride, Terror" },
+		"screaming bell": { "rules": "Armour Bane (2, Rat Ogre only), Blessings of the Horned Rat, Dragged Along, Impact Hits (D6+1), Large Target, Magic Resistance (-3), Scurrying Masses, Stubborn, Terror, Tolling the Bell" },
+		"plague furnace": { "rules": "Dragged Along, Fear, Frenzy, Great Censer, Impact Hits (D3+1), Large Target, Magic Resistance (-1), Poisoned Attacks, Scurrying Masses, Stomp Attacks (D3+1)" },
+		"skeletal steed vampire counts": { "rules": "First Charge, Necromantic Undead, Swiftstride" },
+		"nightmare": { "rules": "Counter Charge, First Charge, Necromantic Undead, Swiftstride" },
+		"coven throne": { "rules": "Close Order, Dark Vitality, First Charge, Fly (8), Ghoulish Glamour, Impact Hits (D6+1), Large Target, Necromantic Undead, Random Attacks (Spirit Horde only), Regeneration (6+), Scrying Pool" },
+		"mortis engine": { "rules": "Accursed Reliquary, Blasphemous Tome, Close Order, Dark Vitality, First Charge, Fly (8), Impact Hits (D6+1), Large Target, Necromantic Undead, Random Attacks (Spirit Horde only), Regeneration (6+), Wailing Dirge" },
+		"abyssal terror": { "rules": "Close Order, Fly (9), Large Target, Necromantic Undead, Stomp Attacks (D3), Swiftstride, Terror" },
+		"zombie dragon": { "rules": "Carrion Feeders, Close Order, Fly (9), Large Target, Necromantic Undead, Stomp Attacks (D6), Swiftstride, Terror" },
+		"terrorgheist": { "rules": "Close Order, Fly (9), Indomitable (1), Infested, Large Target, Necromantic Undead, Regeneration (5+), Stomp Attacks (D6), Swiftstride, Terror, Wailing Dirge" },
+    };
+	
+	const MOUNT_TO_UNIT_MAP = {
+		"boar chariot": "orc boar chariot",
+		"wolf chariot": "goblin wolf chariot"
+	};
+
+    const fileInput = document.getElementById('fileInput');
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    const RULES_URL = "https://raw.githubusercontent.com/nthiebes/old-world-builder/refs/heads/main/src/components/rules-index/rules-index-export.json";
+
+    fileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        const reader = new FileReader();
+        reader.onload = async (ev) => {
+            try {
+                const listData = JSON.parse(ev.target.result);
+                await fetchAndDisplay(listData);
+            } catch (e) {
+                alert("Error: The file you uploaded isn't a valid OWB JSON export.");
+            }
+        };
+        reader.readAsText(file);
+    });
+
+    async function fetchAndDisplay(listData) {
+        loadingOverlay.style.display = 'flex';
+        try {
+            const response = await fetch(RULES_URL);
+            const rulesMap = await response.json();
+            renderUI(listData, rulesMap);
+        } catch (e) {
+            console.error("Fetch error:", e);
+            alert("Could not load the rules index.");
+        } finally {
+            loadingOverlay.style.display = 'none';
+        }
+    }
+
+    function calculateTotalPoints(data) {
+        let total = 0;
+        ['characters', 'core', 'special', 'rare'].forEach(sec => {
+            if (data[sec]) {
+                data[sec].forEach(unit => {
+                    const multiplier = unit.strength || 1;
+                    let unitTotal = (unit.points || 0) * multiplier;
+                    unit.command?.forEach(c => { if(c.active) unitTotal += (c.points || 0); });
+                    const addons = [...(unit.equipment || []), ...(unit.options || [])];
+                    addons.forEach(opt => {
+                        if (opt.active) {
+                            unitTotal += opt.perModel ? (opt.points * multiplier) : opt.points;
+                        }
+                    });
+                    unit.mounts?.forEach(m => { if(m.active) unitTotal += (m.points || 0); });
+                    unit.items?.forEach(group => {
+                        group.selected?.forEach(item => {
+                            unitTotal += (item.points || 0) * (item.amount || 1);
+                        });
+                        group.magic?.selected?.forEach(item => {
+                            unitTotal += (item.points || 0);
+                        });
+                    });
+                    unit.command?.forEach(c => {
+                        if (c.active && c.magic?.selected) {
+                            c.magic.selected.forEach(m => { unitTotal += (m.points || 0); });
+                        }
+                    });
+                    total += unitTotal;
+                });
+            }
+        });
+        return total;
+    }
+
+    function calculateArmor(unit) {
+        let baseSave = 7;
+        let hasShield = false;
+        let hasHandWeapon = false;
+        let hasGreatWeapon = false;
+
+        const gear = [
+            ...(unit.armor || []),
+            ...(unit.equipment || []),
+            ...(unit.options || [])
+        ].filter(i => i.active);
+
+        gear.forEach(item => {
+            const n = item.name_en.toLowerCase();
+            if (n.includes('+')) baseSave = parseInt(n); 
+            if (n.includes("light armour")) baseSave -= 1;
+            else if (n.includes("heavy armour")) baseSave -= 2;
+            else if (n.includes("full plate")) baseSave -= 3;
+            if (n.includes("barding") || n.includes("armoured hide")) baseSave -= 1;
+            if (n.includes("shield")) hasShield = true;
+            if (n.includes("hand weapon")) hasHandWeapon = true;
+            if (n.includes("great weapon") || n.includes("great hammer")) hasGreatWeapon = true;
+        });
+
+        const saveShield = Math.max(2, baseSave - (hasShield ? 1 : 0));
+        const saveGW = Math.max(2, baseSave);
+
+        if (hasShield && hasGreatWeapon) {
+            return { 
+                value: `${saveShield}+/${saveGW}+`, 
+                canParry: hasShield && hasHandWeapon, 
+                note: `<div class="tactical-note">Shield vs Shoot. Combat: ${saveGW}+ (GW) or ${saveShield}+ (HW&S).</div>` 
+            };
+        }
+        return { value: saveShield > 6 ? "-" : saveShield + "+", canParry: hasShield && hasHandWeapon, note: "" };
+    }
+
+    function renderUI(data, rulesMap) {
+        const container = document.getElementById('unitContainer');
+        const metaBox = document.getElementById('armyMeta');
+        container.innerHTML = '';
+        
+        const actualTotal = calculateTotalPoints(data);
+        const maxPoints = data.points;
+        const isOver = actualTotal > maxPoints;
+
+        metaBox.className = `bg-white p-6 rounded-xl shadow-sm border sticky top-24 transition-all duration-300 ${isOver ? 'points-error-glow' : 'border-slate-200'}`;
+        
+        metaBox.innerHTML = `
+            <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Tactical Summary</h3>
+            <div class="text-3xl serif-header font-black ${isOver ? 'text-red-600' : 'text-slate-800'}">${actualTotal} pts</div>
+            <div class="text-[10px] font-bold uppercase tracking-widest ${isOver ? 'text-red-400' : 'text-slate-400'} mb-4">
+                Limit: ${maxPoints} pts ${isOver ? '<br><span class="text-red-600 font-black">[OVER LIMIT]</span>' : ''}
+            </div>
+            <div class="text-xs uppercase font-bold text-[#b59b6d] tracking-widest">${data.army.replace(/-/g, ' ')}</div>
+        `;
+
+        const getRulesHtml = (rawRulesString) => {
+            if (!rawRulesString) return "";
+            return rawRulesString.split(',').map(r => r.trim()).filter(r => r).map(r => {
+                const displayName = r.replace(/\{([^}]*)\}/g, (match, p1) => {
+                    const capitalized = p1.charAt(0).toUpperCase() + p1.slice(1);
+                    return `(${capitalized})`;
+                });
+                const cleanKey = r.replace(/[\{\}\(\)]/g, '').replace(/\s+/g, ' ').toLowerCase().trim();
+                const genericKey = r.split(/[\{\(]/)[0].toLowerCase().trim();
+                const ruleData = rulesMap[cleanKey] || rulesMap[genericKey];
+                return `
+                    <button onclick="openRule('${displayName.replace(/'/g, "\\'")}', '${ruleData ? ruleData.url : null}')" 
+                        class="text-[10px] bg-white px-2 py-0.5 rounded border border-slate-200 font-bold text-slate-500 hover:text-slate-900 transition shadow-sm">
+                        ${displayName}
+                    </button>`;
+            }).join('');
+        };
+
+        const getStatsHtml = (targetEntry, targetName, armorObj, isMount = false, isChampion = false) => {
+			if (targetName.toLowerCase().includes("oathstone")) return "";
+            if (!targetEntry || !targetEntry.stats) return `<div class="text-xs text-red-400 italic">Stats not found for ${targetName}</div>`;
+            return targetEntry.stats
+				.filter((s, index) => isChampion || index !== 1)
+				.map(s => `
+                <div class="mb-3">
+                    <div class="text-[10px] font-black text-slate-400 uppercase mb-1 flex items-center gap-2">
+                        ${s.Name || targetName} ${(!isMount && armorObj.canParry) ? `<span onclick="openRule('Parry', 'troop-types-in-detail/parry')" class="parry-badge">Parry</span>` : ''}
+                    </div>
+                    <div class="stat-grid">
+                        ${['M','WS','BS','S','T','W','I','A','Ld'].map(k => `
+                            <div class="stat-box"><span class="stat-label">${k}</span><span class="stat-val">${s[k] || '-'}</span></div>
+                        `).join('')}
+                        <div class="stat-box bg-blue-50/50"><span class="stat-label text-blue-400">SV</span><span class="stat-val text-blue-700">${isMount ? '-' : armorObj.value}</span></div>
+                    </div>
+                </div>
+            `).join('');
+        };
+
+        ['characters', 'core', 'special', 'rare'].forEach(sec => {
+            if (!data[sec] || data[sec].length === 0) return;
+            const sectionDiv = document.createElement('div');
+            sectionDiv.className = "section-divider";
+            sectionDiv.innerHTML = `<div class="section-line"></div><h3>${sec}</h3><div class="section-line"></div>`;
+            container.appendChild(sectionDiv);
+
+            data[sec].forEach(unit => {
+                const rawName = unit.name_en || unit.name;
+                // FIX: Preserving the full name including parentheses for lookup, but cleaning for display
+                const displayName = rawName.replace(/\{[^}]*\}/g, '').split('.')[0].trim();
+                
+                // Construct search key: lowercase, remove curly brackets, normalize spaces
+                let lookupKey = rawName.toLowerCase()
+                                .replace(/\{|\}/g, '') // remove {en} etc
+                                .replace(/[\(\)]/g, '')     // remove parentheses for Cannon (Dwarfs) -> Cannon Dwarfs
+                                .replace(/\s+/g, ' ')      // normalize spaces
+                                .trim();
+
+                let entry = rulesMap[lookupKey];
+
+                // FALLBACKS: If "cannon dwarfs" fails, try "cannon" or singular version
+                if (!entry) {
+                   const fallbacks = [
+                       lookupKey.replace(/s$/, ''), // try singular
+                       displayName.toLowerCase(),   // try shortened name
+                       `${displayName.toLowerCase()} dwarfs` // manual suffix
+                   ];
+                   for (let fb of fallbacks) {
+                       if (rulesMap[fb]) {
+                           entry = rulesMap[fb];
+                           break;
+                       }
+                   }
+                }
+
+                let mountEntry = null;
+                let mountName = "";
+                let finalMountRules = "";
+
+                if (unit.mounts && Array.isArray(unit.mounts)) {
+                    const selectedMount = unit.mounts.find(m => m.active === true);
+                    if (selectedMount && !selectedMount.name_en.toLowerCase().includes("on foot")) {
+                        mountName = selectedMount.name_en.replace(/\{([^}]*)\}/g, '$1').split('.')[0].trim();
+                        const mountKey = mountName.toLowerCase().trim();
+                        mountEntry = rulesMap[mountKey];
+						if (!mountEntry && MOUNT_TO_UNIT_MAP[mountKey]) {
+							const mappedKey = MOUNT_TO_UNIT_MAP[mountKey];
+							mountEntry = rulesMap[mappedKey];
+						}
+                        const patch = MOUNT_PATCHES[mountKey];
+                        if (patch) {
+                            finalMountRules = patch.rules;
+                        } else if (mountEntry) {
+                            finalMountRules = mountEntry.specialRules?.name_en || mountEntry.specialRules || "";
+                        }
+                    }
+                }
+
+                const activeCommand = (unit.command || []).filter(c => c.active);
+				const isChampion = activeCommand.some(c => {
+					const name = c.name_en.toLowerCase();
+					return !name.includes("musician") && !name.includes("standard bearer");
+				});
+                const commandList = activeCommand.map(c => c.name_en).join(", ");
+                const armor = calculateArmor(unit);
+                const equip = [...(unit.equipment||[]), ...(unit.armor||[]), ...(unit.options||[])].filter(i => i.active).map(i => i.name_en).join(", ");
+
+                let magicItemsList = [];
+                if (unit.items && Array.isArray(unit.items)) {
+                    unit.items.forEach(cat => { 
+                        if (cat.selected) magicItemsList = [...magicItemsList, ...cat.selected]; 
+                    });
+                }
+                unit.command?.forEach(c => {
+                    if (c.active && c.magic && c.magic.selected) {
+                        magicItemsList = [...magicItemsList, ...c.magic.selected];
+                    }
+                });
+
+                const magicHtml = magicItemsList.map(item => {
+                    const itemKey = item.name.toLowerCase().trim();
+                    const itemUrl = rulesMap[itemKey] ? rulesMap[itemKey].url : `magic-item/${itemKey.replace(/\s+/g, '-')}`;
+                    return `<button onclick="openRule('${item.name_en || item.name}', '${itemUrl}')" class="underline decoration-dotted hover:text-[#b59b6d] font-bold">${item.name_en || item.name}</button>`;
+                }).join(', ');
+
+                const unitStatsHtml = getStatsHtml(entry, displayName, armor, false, isChampion);
+                const unitRulesHtml = getRulesHtml(unit.specialRules?.name_en);
+                
+                let mountBlockHtml = "";
+                if (mountEntry) {
+                    const mountRulesHtml = getRulesHtml(finalMountRules);
+                    mountBlockHtml = `
+                        <div class="mt-4 pt-4 border-t-2 border-dashed border-slate-200">
+                            <div class="text-[10px] font-bold text-[#b59b6d] uppercase mb-2 tracking-widest">Mount Profile: ${mountName}</div>
+                            ${getStatsHtml(mountEntry, mountName, armor, true)}
+                            <div class="flex flex-wrap gap-1 mt-2">${mountRulesHtml}</div>
+                        </div>`;
+                }
+
+                const multiplier = unit.strength || 1;
+                let unitTotalPoints = (unit.points || 0) * multiplier;
+                unit.command?.forEach(c => { if(c.active) unitTotalPoints += (c.points || 0); });
+                const addons = [...(unit.equipment || []), ...(unit.options || [])];
+                addons.forEach(opt => {
+                    if (opt.active) {
+                        unitTotalPoints += opt.perModel ? (opt.points * multiplier) : opt.points;
+                    }
+                });
+                unit.mounts?.forEach(m => { if(m.active) unitTotalPoints += (m.points || 0); });
+                unit.items?.forEach(group => {
+                    group.selected?.forEach(item => {
+                        unitTotalPoints += (item.points || 0) * (item.amount || 1);
+                    });
+                    group.magic?.selected?.forEach(item => { unitTotalPoints += (item.points || 0); });
+                });
+                unit.command?.forEach(c => {
+                    if (c.active && c.magic?.selected) {
+                        c.magic.selected.forEach(m => { unitTotalPoints += (m.points || 0); });
+                    }
+                });
+
+                const card = document.createElement('div');
+                card.className = "unit-card shadow-sm mb-4";
+                card.innerHTML = `
+                    <div class="unit-header-block">
+                        <div>
+                            <button onclick="openRule('${displayName}', '${entry ? entry.url : null}')" class="serif-header text-3xl font-black text-slate-800 hover:text-[#b59b6d] text-left leading-none">${displayName}</button>
+                            <div class="flex items-center gap-3 mt-1">
+                                <div class="text-xs font-bold text-slate-400 uppercase">${unit.strength || 1} models</div>
+                                <div class="h-3 w-[1px] bg-slate-300"></div>
+                                <div class="text-xs font-bold text-slate-600 uppercase">Unit Strength: ${unit.unit_strength || (unit.strength || 1)}</div>
+                                <div class="h-3 w-[1px] bg-slate-300"></div>
+                                <div class="text-xs font-black text-[#b59b6d] uppercase">${unitTotalPoints} pts</div>
+                            </div>
+                        </div>
+                        <div class="text-right unit-details-row max-w-[50%]">
+                            ${commandList ? `<div><strong>Command:</strong> ${commandList}</div>` : ''}
+                            <div><strong>Equipment:</strong> ${equip || 'None'}</div>
+                            ${magicHtml ? `<div><strong>Magic Items:</strong> ${magicHtml}</div>` : ''}
+                        </div>
+                    </div>
+                    <div>
+                        ${unitStatsHtml}
+                        <div class="flex flex-wrap gap-1 mt-2">${unitRulesHtml}</div>
+                    </div>
+                    ${mountBlockHtml}
+                    ${armor.note ? `<div class="mt-2 text-xs italic text-slate-500">${armor.note}</div>` : ''}
+                `;
+                container.appendChild(card);
+            });
+        });
+    }
+
+    function openRule(displayName, directPath) {
+        document.getElementById('drawerTitle').innerText = displayName;
+        document.getElementById('drawerLoader').style.display = 'flex';
+        let finalPath = (directPath && directPath !== "null") ? directPath : `special-rules/${displayName.toLowerCase().replace(/\s+/g, '-')}`;
+        document.getElementById('ruleFrame').src = "https://tow.whfb.app/" + finalPath.replace(/^\//, ''); 
+        document.getElementById('ruleDrawer').classList.add('open');
+        document.getElementById('drawerOverlay').classList.add('open');
+        document.getElementById('ruleFrame').onload = () => { document.getElementById('drawerLoader').style.display = 'none'; };
+    }
+
+    function closeDrawer() { 
+        document.getElementById('ruleDrawer').classList.remove('open'); 
+        document.getElementById('drawerOverlay').classList.remove('open'); 
+        document.getElementById('ruleFrame').src = ""; 
+    }
+</script>
+</body>
+</html>
