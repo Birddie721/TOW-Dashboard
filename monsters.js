@@ -5,7 +5,7 @@ const MONSTERS = {
 	"warhawk": ["wicked claws"],
 	"forest dragon": ["wicked claws", "serrated maw", "soporific breath"],
 	"great eagle": ["wicked claws", "serrated maw"],
-	"treeman": ["wicked claws", "serrated maw"],
+	"treeman": ["oaken fists", "strangleroots"],
 	"sun dragon": ["wicked claws", "dragon fire"],
 	"moon dragon": ["wicked claws", "dragon fire"],
 	"star dragon": ["wicked claws", "dragon fire"],

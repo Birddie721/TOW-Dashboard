@@ -82,5 +82,5 @@ const MOUNT_PATCHES = {
 		"mortis engine": { "rules": "Accursed Reliquary, Blasphemous Tome, Close Order, Dark Vitality, First Charge, Fly (8), Impact Hits (D6+1), Large Target, Necromantic Undead, Random Attacks (Spirit Horde only), Regeneration (6+), Wailing Dirge" },
 		"abyssal terror": { "rules": "Close Order, Fly (9), Large Target, Necromantic Undead, Stomp Attacks (D3), Swiftstride, Terror" },
 		"zombie dragon": { "rules": "Carrion Feeders, Close Order, Fly (9), Large Target, Necromantic Undead, Stomp Attacks (D6), Swiftstride, Terror" },
-		"terrorgheist": { "rules": "Close Order, Fly (9), Indomitable (1), Infested, Large Target, Necromantic Undead, Regeneration (5+), Stomp Attacks (D6), Swiftstride, Terror, Wailing Dirge" },
+		"terrorgheist": { "rules": "Close Order, Fly (9), Indomitable (1), Infested, Large Target, Necromantic Undead, Regeneration (5+), Stomp Attacks (D6), Swiftstride, Terror, Wailing Dirge" }
     };
