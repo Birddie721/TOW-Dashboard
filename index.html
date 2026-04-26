@@ -394,7 +394,7 @@
 					<button onclick="openRule('${displayName.replace(/'/g, "\\'")}', '${ruleData ? ruleData.url : null}')" 
 						class="text-[10px] bg-white px-2 py-0.5 rounded border border-slate-200 font-bold text-slate-500 hover:text-slate-900 transition shadow-sm whitespace-nowrap">
 						${displayName}
-            <		/button>`;
+					</button>`;
 			}).join('');
 		};
 
@@ -506,7 +506,30 @@
                 }).join(', ');
 
                 const unitStatsHtml = getStatsHtml(entry, displayName, armor, false, isChampion);
-                const unitRulesHtml = getRulesHtml(unit.specialRules?.name_en);
+				
+				let rulesArray = [unit.specialRules?.name_en || ""];
+
+
+				if (unit.options) {
+					unit.options.forEach(opt => {
+						// Check if the top-level option is active (e.g., Mark of Chaos)
+						if (opt.active) {
+							// Check for sub-options (this is where Mark of Khorne lives)
+							if (opt.options) {
+								opt.options.forEach(subOpt => {
+									if (subOpt.active) rulesArray.push(subOpt.name_en);
+								});
+							} else {
+								// If there are no sub-options, just add the name if it's active
+								rulesArray.push(opt.name_en);
+							}
+						}
+					});
+				}
+
+				// 3. Clean up the array and join into a string for the existing helper
+				const combinedRulesString = rulesArray.filter(r => r).join(', ');
+                const unitRulesHtml = getRulesHtml(combinedRulesString);
                 
                 let mountBlockHtml = "";
                 if (mountEntry) {
