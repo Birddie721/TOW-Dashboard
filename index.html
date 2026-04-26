@@ -242,6 +242,8 @@
 		"LCh": 3,
 		"HCh": 5
 	};
+	
+	const RANK_AND_FILE_TYPES = ["RI", "HI", "MI", "LCa", "HCa", "MCa", "Sw", "WB"];
 
     const fileInput = document.getElementById('fileInput');
     const loadingOverlay = document.getElementById('loadingOverlay');
@@ -398,11 +400,16 @@
 			}).join('');
 		};
 
-        const getStatsHtml = (targetEntry, targetName, armorObj, isMount = false, isChampion = false) => {
+        const getStatsHtml = (targetEntry, targetName, armorObj, isMount = false, showAll = false) => {
 			if (targetName.toLowerCase().includes("oathstone")) return "";
             if (!targetEntry || !targetEntry.stats) return `<div class="text-xs text-red-400 italic">Stats not found for ${targetName}</div>`;
             return targetEntry.stats
-				.filter((s, index) => isChampion || index !== 1)
+				.filter((s, index) => {
+            // Always show the first profile (index 0)
+            if (index === 0) return true;
+            // Show subsequent profiles only if showAll is true
+            return showAll;
+        })
 				.map(s => `
                 <div class="mb-3">
                     <div class="text-[10px] font-black text-slate-400 uppercase mb-1 flex items-center gap-2">
@@ -454,6 +461,9 @@
 				const troopTypeCode = entry ? entry.troopType : null;
 				const troopTypeName = TROOP_TYPE_NAMES[troopTypeCode] || troopTypeCode || "Unknown Type";
 				
+				const isRankAndFile = RANK_AND_FILE_TYPES.includes(troopTypeCode);
+				
+				
 
                 let mountEntry = null;
                 let mountName = "";
@@ -504,10 +514,17 @@
                     const itemUrl = rulesMap[itemKey] ? rulesMap[itemKey].url : `magic-item/${itemKey.replace(/\s+/g, '-')}`;
                     return `<button onclick="openRule('${item.name_en || item.name}', '${itemUrl}')" class="underline decoration-dotted hover:text-[#b59b6d] font-bold">${item.name_en || item.name}</button>`;
                 }).join(', ');
+				
+				const showFullProfiles = !isRankAndFile || activeCommand.some(c => {
+					const name = c.name_en.toLowerCase();
+					return !name.includes("musician") && !name.includes("standard bearer");
+				});
 
-                const unitStatsHtml = getStatsHtml(entry, displayName, armor, false, isChampion);
+                const unitStatsHtml = getStatsHtml(entry, displayName, armor, false, showFullProfiles);
 				
 				let rulesArray = [unit.specialRules?.name_en || ""];
+				
+				
 
 
 				if (unit.options) {
