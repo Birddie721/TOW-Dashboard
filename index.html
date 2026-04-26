@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TOW Master</title>
+    <title>TOW Dashboard</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -174,7 +174,7 @@
         <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
             <div class="flex items-center gap-3">
                 <i class="fa-solid fa-book-atlas text-[#b59b6d] text-2xl"></i>
-                <h1 class="serif-header text-2xl font-black tracking-tight uppercase">TOW Master </h1>
+                <h1 class="serif-header text-2xl font-black tracking-tight uppercase">TOW Dashboard </h1>
             </div>
             <button onclick="document.getElementById('fileInput').click()" class="bg-white/10 hover:bg-white/20 border border-white/20 px-5 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2">
                 <i class="fa-solid fa-file-arrow-up"></i> IMPORT OWB JSON
@@ -212,6 +212,35 @@
 	const MOUNT_TO_UNIT_MAP = {
 		"boar chariot": "orc boar chariot",
 		"wolf chariot": "goblin wolf chariot"
+	};
+	
+	const TROOP_TYPE_NAMES = {
+		"RI": "Regular Infantry",
+		"HI": "Heavy Infantry",
+		"MI": "Monstrous Infantry",
+		"Sw": "Swarm",
+		"LCa": "Light Cavalry",
+		"HCa": "Heavy Cavalry",
+		"MCa": "Monstrous Cavalry",
+		"WB": "War Beast",
+		"MCr": "Monstrous Creature",
+		"Be": "Behemoth",
+		"WM": "War Machine",
+		"LCh": "Light Chariot",
+		"HCh": "Heavy Chariot"
+	};
+
+	const STRENGTH_MULTIPLIERS = {
+		"RI": 1,
+		"HI": 1,
+		"MI": 3,
+		"Sw": 3,
+		"LCa": 2,
+		"HCa": 2,
+		"MCa": 3,
+		"WB": 1,
+		"LCh": 3,
+		"HCh": 5
 	};
 
     const fileInput = document.getElementById('fileInput');
@@ -339,22 +368,35 @@
         `;
 
         const getRulesHtml = (rawRulesString) => {
-            if (!rawRulesString) return "";
-            return rawRulesString.split(',').map(r => r.trim()).filter(r => r).map(r => {
-                const displayName = r.replace(/\{([^}]*)\}/g, (match, p1) => {
-                    const capitalized = p1.charAt(0).toUpperCase() + p1.slice(1);
-                    return `(${capitalized})`;
-                });
-                const cleanKey = r.replace(/[\{\}\(\)]/g, '').replace(/\s+/g, ' ').toLowerCase().trim();
-                const genericKey = r.split(/[\{\(]/)[0].toLowerCase().trim();
-                const ruleData = rulesMap[cleanKey] || rulesMap[genericKey];
-                return `
-                    <button onclick="openRule('${displayName.replace(/'/g, "\\'")}', '${ruleData ? ruleData.url : null}')" 
-                        class="text-[10px] bg-white px-2 py-0.5 rounded border border-slate-200 font-bold text-slate-500 hover:text-slate-900 transition shadow-sm">
-                        ${displayName}
-                    </button>`;
-            }).join('');
-        };
+			if (!rawRulesString) return "";
+			return rawRulesString.split(',').map(r => r.trim()).filter(r => r).map(r => {
+				// 1. Keep display name mostly as-is (handling the curly brace replacement)
+				const displayName = r.replace(/\{([^}]*)\}/g, (match, p1) => {
+					const capitalized = p1.charAt(0).toUpperCase() + p1.slice(1);
+					return `(${capitalized})`;
+				});
+
+				// 2. Create the cleanKey for rulesMap lookup
+				let cleanKey = r
+					.replace(/\(\d+\+?\)/g, '')   // Remove stat parens like (5+) or (2)
+					.replace(/[\{\}\(\)]/g, '')   // Remove remaining parens and braces
+					.replace(/\s+/g, ' ')         // Collapse multiple spaces
+					.toLowerCase()
+					.trim();
+
+				// 3. Generic key (first word/phrase before any extra info)
+				const genericKey = r.split(/[\{\(]/)[0].toLowerCase().trim();
+
+				// Lookup: try "chaos armour warriors of chaos", then "chaos armour"
+				const ruleData = rulesMap[cleanKey] || rulesMap[genericKey];
+
+				return `
+					<button onclick="openRule('${displayName.replace(/'/g, "\\'")}', '${ruleData ? ruleData.url : null}')" 
+						class="text-[10px] bg-white px-2 py-0.5 rounded border border-slate-200 font-bold text-slate-500 hover:text-slate-900 transition shadow-sm whitespace-nowrap">
+						${displayName}
+            <		/button>`;
+			}).join('');
+		};
 
         const getStatsHtml = (targetEntry, targetName, armorObj, isMount = false, isChampion = false) => {
 			if (targetName.toLowerCase().includes("oathstone")) return "";
@@ -385,10 +427,8 @@
 
             data[sec].forEach(unit => {
                 const rawName = unit.name_en || unit.name;
-                // FIX: Preserving the full name including parentheses for lookup, but cleaning for display
                 const displayName = rawName.replace(/\{[^}]*\}/g, '').split('.')[0].trim();
                 
-                // Construct search key: lowercase, remove curly brackets, normalize spaces
                 let lookupKey = rawName.toLowerCase()
                                 .replace(/\{|\}/g, '') // remove {en} etc
                                 .replace(/[\(\)]/g, '')     // remove parentheses for Cannon (Dwarfs) -> Cannon Dwarfs
@@ -396,8 +436,7 @@
                                 .trim();
 
                 let entry = rulesMap[lookupKey];
-
-                // FALLBACKS: If "cannon dwarfs" fails, try "cannon" or singular version
+                
                 if (!entry) {
                    const fallbacks = [
                        lookupKey.replace(/s$/, ''), // try singular
@@ -411,6 +450,10 @@
                        }
                    }
                 }
+				
+				const troopTypeCode = entry ? entry.troopType : null;
+				const troopTypeName = TROOP_TYPE_NAMES[troopTypeCode] || troopTypeCode || "Unknown Type";
+				
 
                 let mountEntry = null;
                 let mountName = "";
@@ -497,6 +540,13 @@
                         c.magic.selected.forEach(m => { unitTotalPoints += (m.points || 0); });
                     }
                 });
+				
+				const usmultiplier = STRENGTH_MULTIPLIERS[troopTypeCode] || 1;
+				if (troopTypeCode === "BE" || troopTypeCode === "MB") {
+					const startingWounds = entry?.stats?.[0]?.W;
+					usmultiplier = parseInt(startingWounds) || 1; 
+				}
+				const calculatedUnitStrength = (unit.strength || 1) * usmultiplier;
 
                 const card = document.createElement('div');
                 card.className = "unit-card shadow-sm mb-4";
@@ -505,11 +555,13 @@
                         <div>
                             <button onclick="openRule('${displayName}', '${entry ? entry.url : null}')" class="serif-header text-3xl font-black text-slate-800 hover:text-[#b59b6d] text-left leading-none">${displayName}</button>
                             <div class="flex items-center gap-3 mt-1">
-                                <div class="text-xs font-bold text-slate-400 uppercase">${unit.strength || 1} models</div>
+                                <div class="text-xs font-bold text-slate-400">${unit.strength || 1} Models</div>
                                 <div class="h-3 w-[1px] bg-slate-300"></div>
-                                <div class="text-xs font-bold text-slate-600 uppercase">Unit Strength: ${unit.unit_strength || (unit.strength || 1)}</div>
+								<div class="text-xs font-bold text-indigo-500">${troopTypeName}</div>
+								<div class="h-3 w-[1px] bg-slate-300"></div>
+                                <div class="text-xs font-bold text-slate-600">Unit Strength: ${calculatedUnitStrength}</div>
                                 <div class="h-3 w-[1px] bg-slate-300"></div>
-                                <div class="text-xs font-black text-[#b59b6d] uppercase">${unitTotalPoints} pts</div>
+                                <div class="text-xs font-black text-[#b59b6d]">${unitTotalPoints} pts</div>
                             </div>
                         </div>
                         <div class="text-right unit-details-row max-w-[50%]">
