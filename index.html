@@ -370,35 +370,43 @@
         `;
 
         const getRulesHtml = (rawRulesString) => {
-			if (!rawRulesString) return "";
-			return rawRulesString.split(',').map(r => r.trim()).filter(r => r).map(r => {
-				// 1. Keep display name mostly as-is (handling the curly brace replacement)
-				const displayName = r.replace(/\{([^}]*)\}/g, (match, p1) => {
-					const capitalized = p1.charAt(0).toUpperCase() + p1.slice(1);
-					return `(${capitalized})`;
-				});
+    if (!rawRulesString) return "";
+    return rawRulesString.split(',').map(r => r.trim()).filter(r => r).map(r => {
+        // 1. Clean the raw string of trailing asterisks (e.g., "Aquatic**" -> "Aquatic")
+        const cleanR = r.replace(/\*+$/, '');
 
-				// 2. Create the cleanKey for rulesMap lookup
-				let cleanKey = r
-					.replace(/\(\d+\+?\)/g, '')   // Remove stat parens like (5+) or (2)
-					.replace(/[\{\}\(\)]/g, '')   // Remove remaining parens and braces
-					.replace(/\s+/g, ' ')         // Collapse multiple spaces
-					.toLowerCase()
-					.trim();
+        // 2. Keep display name mostly as-is (using cleaned version)
+        const displayName = cleanR.replace(/\{([^}]*)\}/g, (match, p1) => {
+            const capitalized = p1.charAt(0).toUpperCase() + p1.slice(1);
+            return `(${capitalized})`;
+        });
 
-				// 3. Generic key (first word/phrase before any extra info)
-				const genericKey = r.split(/[\{\(]/)[0].toLowerCase().trim();
+        // 3. Create the cleanKey for rulesMap lookup
+        let cleanKey = cleanR
+            .replace(/\(\d+\+?\)/g, '')   
+            .replace(/[\{\}\(\)]/g, '')   
+            .replace(/\s+/g, ' ')         
+            .toLowerCase()
+            .trim();
 
-				// Lookup: try "chaos armour warriors of chaos", then "chaos armour"
-				const ruleData = rulesMap[cleanKey] || rulesMap[genericKey];
+        const genericKey = cleanR.split(/[\{\(]/)[0].toLowerCase().trim();
 
-				return `
-					<button onclick="openRule('${displayName.replace(/'/g, "\\'")}', '${ruleData ? ruleData.url : null}')" 
-						class="text-[10px] bg-white px-2 py-0.5 rounded border border-slate-200 font-bold text-slate-500 hover:text-slate-900 transition shadow-sm whitespace-nowrap">
-						${displayName}
-					</button>`;
-			}).join('');
-		};
+        // 4. Special Case: Magic Levels
+        let manualPath = null;
+        if (/^level\s+\d+\s+wizard$/i.test(cleanKey)) {
+            manualPath = "magic/levels-of-wizardry";
+        }
+
+        // Lookup: Use manualPath if found, otherwise check rulesMap
+        const ruleUrl = manualPath || (rulesMap[cleanKey] || rulesMap[genericKey] || {}).url;
+
+        return `
+            <button onclick="openRule('${displayName.replace(/'/g, "\\'")}', '${ruleUrl || null}')" 
+                class="text-[10px] bg-white px-2 py-0.5 rounded border border-slate-200 font-bold text-slate-500 hover:text-slate-900 transition shadow-sm whitespace-nowrap">
+                ${displayName}
+            </button>`;
+    }).join('');
+};
 
         const getStatsHtml = (targetEntry, targetName, armorObj, isMount = false, showAll = false) => {
 			if (targetName.toLowerCase().includes("oathstone")) return "";
