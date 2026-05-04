@@ -318,6 +318,7 @@ const MOUNT_TO_UNIT_MAP = {
 				});
 
                 const unitStatsHtml = getStatsHtml(entry, displayName, armor, false, showFullProfiles);
+				const mainMonsterWeapons = getMonsterWeaponsHtml(displayName);
 				
 				let rulesArray = [unit.specialRules?.name_en || ""];
 				
@@ -347,14 +348,21 @@ const MOUNT_TO_UNIT_MAP = {
                 
                 let mountBlockHtml = "";
                 if (mountEntry) {
-                    const mountRulesHtml = getRulesHtml(finalMountRules);
-                    mountBlockHtml = `
-                        <div class="mt-4 pt-4 border-t-2 border-dashed border-slate-200">
-                            <div class="text-[10px] font-bold text-[#b59b6d] uppercase mb-2 tracking-widest">Mount Profile: ${mountName}</div>
-                            ${getStatsHtml(mountEntry, mountName, armor, true)}
-                            <div class="flex flex-wrap gap-1 mt-2">${mountRulesHtml}</div>
-                        </div>`;
-                }
+					const mountRulesHtml = getRulesHtml(finalMountRules);
+					// We pass 'true' as the last argument to show all profiles (Pallid Handmaidens, Spirit Host, etc.)
+					const mountStatsContent = getStatsHtml(mountEntry, mountName, armor, true, true);
+    
+					// We also check the base mount name for weapons (e.g., "Arachnarok Spider")
+					const baseMountWeapons = getMonsterWeaponsHtml(mountName);
+
+					mountBlockHtml = `
+						<div class="mt-4 pt-4 border-t-2 border-dashed border-slate-200">
+							<div class="text-[10px] font-bold text-[#b59b6d] uppercase mb-2 tracking-widest">Mount: ${mountName}</div>
+							${mountStatsContent}
+							<div class="flex flex-wrap gap-1 mt-2">${mountRulesHtml}</div>
+							${baseMountWeapons}
+						</div>`;
+				}
 
                 const multiplier = unit.strength || 1;
                 let unitTotalPoints = (unit.points || 0) * multiplier;
@@ -408,9 +416,10 @@ const MOUNT_TO_UNIT_MAP = {
                         </div>
                     </div>
                     <div>
-                        ${unitStatsHtml}
-                        <div class="flex flex-wrap gap-1 mt-2">${unitRulesHtml}</div>
-                    </div>
+						${unitStatsHtml}
+						<div class="flex flex-wrap gap-1 mt-2">${unitRulesHtml}</div>
+						${mainMonsterWeapons} 
+					</div>
                     ${mountBlockHtml}
                     ${armor.note ? `<div class="mt-2 text-xs italic text-slate-500">${armor.note}</div>` : ''}
                 `;
@@ -434,3 +443,42 @@ const MOUNT_TO_UNIT_MAP = {
         document.getElementById('drawerOverlay').classList.remove('open'); 
         document.getElementById('ruleFrame').src = ""; 
     }
+	
+	function getMonsterWeaponsHtml(targetName) {
+		const lowerName = targetName.toLowerCase().trim();
+		const weaponKeys = MONSTERS[lowerName];
+    
+		if (!weaponKeys) return "";
+
+		const rows = weaponKeys.map(wKey => {
+			const stats = MONSTER_ATTACKS[wKey];
+			if (!stats) return "";
+			return `
+				<tr class="border-b border-slate-100 last:border-0 text-[10px]">
+					<td class="py-1 font-bold text-slate-700 capitalize">${wKey}</td>
+					<td class="py-1 text-center text-slate-500">${stats.R}</td>
+					<td class="py-1 text-center font-bold text-slate-700">${stats.S}</td>
+					<td class="py-1 text-center text-slate-500">${stats.AP}</td>
+					<td class="py-1 text-right italic text-slate-400 leading-tight">${stats.rules || '-'}</td>
+				</tr>
+			`;
+		}).join('');
+
+		return `
+			<div class="mt-3 bg-slate-50/50 rounded-lg p-2 border border-slate-100">
+				<div class="text-[9px] font-black text-slate-400 uppercase tracking-tighter mb-1">Natural Weapons</div>
+				<table class="w-full">
+					<thead>
+						<tr class="text-[9px] text-slate-400 uppercase text-left border-b border-slate-200">
+							<th class="pb-1">Weapon</th>
+							<th class="pb-1 text-center">R</th>
+							<th class="pb-1 text-center">S</th>
+							<th class="pb-1 text-center">AP</th>
+							<th class="pb-1 text-right">Special Rules</th>
+						</tr>
+					</thead>
+					<tbody>${rows}</tbody>
+				</table>
+			</div>
+		`;
+	}
