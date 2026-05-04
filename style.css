@@ -1,0 +1,147 @@
+/* 1. CORE THEME & LAYOUT */
+    :root { --parchment: #fdfaf3; --gothic-gold: #b59b6d; }
+    
+    body { 
+        font-family: 'Inter', sans-serif; 
+        background-color: #f1f1f1; 
+        background-image: url('https://www.transparenttextures.com/patterns/p6-dark.png'); 
+        color: #2d3748; 
+        min-height: 100vh;
+    }
+
+    .serif-header { font-family: 'Crimson Pro', serif; }
+
+    /* 2. UNIT CARD CONTAINER */
+    .unit-card { 
+        background: var(--parchment); 
+        border: 1px solid #e2e8f0; 
+        border-top: 4px solid var(--gothic-gold); 
+        transition: all 0.2s ease; 
+        padding: 1.5rem;
+        border-radius: 0.75rem;
+        margin-bottom: 1rem;
+        display: block;
+    }
+
+    /* 3. UNIT HEADER */
+    .unit-header-block { 
+        display: flex; 
+        justify-content: space-between; 
+        align-items: flex-start; 
+        border-bottom: 1px solid #edf2f7; 
+        padding-bottom: 12px; 
+        margin-bottom: 12px; 
+    }
+
+    /* 4. STAT GRID */
+    .stat-grid { 
+        display: flex; 
+        flex-wrap: nowrap; 
+        background: white; 
+        border: 1px solid #e2e8f0; 
+        border-radius: 6px; 
+        overflow: hidden; 
+        margin-bottom: 8px; 
+    }
+
+    .stat-box { 
+        flex: 1; 
+        text-align: center; 
+        border-right: 1px solid #e2e8f0; 
+        padding: 4px 2px; 
+    }
+
+    .stat-box:last-child { border-right: none; }
+
+    .stat-label { 
+        font-size: 16px; 
+        font-weight: 900; 
+        color: #a0aec0; 
+        text-transform: uppercase; 
+        display: block; 
+    }
+
+    .stat-val { 
+        font-size: 13px; 
+        font-weight: 900; 
+        color: #2d3748; 
+    }
+
+    /* 5. BADGES & NOTES */
+    .parry-badge { 
+        background: #e0f2fe; 
+        color: #0369a1; 
+        border: 1px solid #bae6fd; 
+        font-size: 9px; 
+        padding: 2px 6px; 
+        border-radius: 4px; 
+        font-weight: 800; 
+        display: inline-flex; 
+        align-items: center; 
+        margin-left: 8px; 
+        transition: all 0.2s; 
+        cursor: pointer; 
+    }
+
+    .parry-badge:hover { 
+        background: #bae6fd; 
+        transform: translateY(-1px); 
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05); 
+    }
+
+    .tactical-note { 
+        background: #fffbeb; 
+        color: #92400e; 
+        border: 1px solid #fde68a; 
+        font-size: 9px; 
+        padding: 4px 8px; 
+        border-radius: 4px; 
+        font-weight: 700; 
+        margin-top: 8px; 
+        line-height: 1.2; 
+    }
+
+    /* 6. SECTIONS & LOADING */
+    .section-divider { display: flex; align-items: center; gap: 1rem; margin: 2.5rem 0 1.5rem 0; }
+    .section-divider h3 { font-size: 0.75rem; font-weight: 900; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gothic-gold); white-space: nowrap; }
+    .section-line { height: 1px; background: #cbd5e0; width: 100%; }
+
+    #loadingOverlay { display: none; background: white; position: fixed; inset: 0; z-index: 100; flex-direction: column; align-items: center; justify-content: center; }
+
+    /* 7. RULE DRAWER */
+    #ruleDrawer { 
+        transform: translateX(100%); 
+        transition: transform 0.3s cubic-bezier(0, 0, 0.2, 1); 
+        border-left: 1px solid #cbd5e0; 
+        background: white; 
+        position: fixed; 
+        top: 0; 
+        right: 0; 
+        height: 100%; 
+        width: 100%; 
+        z-index: 60; 
+    }
+    @media (min-width: 768px) { #ruleDrawer { width: 550px; } }
+    
+    .unit-details-row {
+        font-size: 13px;
+        line-height: 1.6;
+        color: #4a5568;
+    }
+
+    .unit-details-row strong {
+        color: #2d3748;
+        text-transform: uppercase;
+        font-size: 11px;
+        letter-spacing: 0.05em;
+    }
+    
+    #ruleDrawer.open { transform: translateX(0); }
+    .drawer-overlay { display: none; background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(4px); position: fixed; inset: 0; z-index: 50; }
+    .drawer-overlay.open { display: block; }
+
+    /* New Points Error Styling */
+    .points-error-glow {
+        border: 2px solid #ef4444 !important;
+        background-color: #fef2f2 !important;
+    }
