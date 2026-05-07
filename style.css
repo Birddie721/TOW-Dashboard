@@ -1,17 +1,16 @@
-/* 1. CORE THEME & LAYOUT */
+
     :root { --parchment: #fdfaf3; --gothic-gold: #b59b6d; }
     
     body { 
         font-family: 'Inter', sans-serif; 
         background-color: #f1f1f1; 
-        background-image: url('https://www.transparenttextures.com/patterns/p6-dark.png'); 
         color: #2d3748; 
         min-height: 100vh;
     }
 
     .serif-header { font-family: 'Crimson Pro', serif; }
 
-    /* 2. UNIT CARD CONTAINER */
+    
     .unit-card { 
         background: var(--parchment); 
         border: 1px solid #e2e8f0; 
@@ -23,7 +22,7 @@
         display: block;
     }
 
-    /* 3. UNIT HEADER */
+    
     .unit-header-block { 
         display: flex; 
         justify-content: space-between; 
@@ -33,7 +32,7 @@
         margin-bottom: 12px; 
     }
 
-    /* 4. STAT GRID */
+    
     .stat-grid { 
         display: flex; 
         flex-wrap: nowrap; 
@@ -67,7 +66,7 @@
         color: #2d3748; 
     }
 
-    /* 5. BADGES & NOTES */
+    
     .parry-badge { 
         background: #e0f2fe; 
         color: #0369a1; 
@@ -101,14 +100,14 @@
         line-height: 1.2; 
     }
 
-    /* 6. SECTIONS & LOADING */
+    
     .section-divider { display: flex; align-items: center; gap: 1rem; margin: 2.5rem 0 1.5rem 0; }
     .section-divider h3 { font-size: 0.75rem; font-weight: 900; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gothic-gold); white-space: nowrap; }
     .section-line { height: 1px; background: #cbd5e0; width: 100%; }
 
     #loadingOverlay { display: none; background: white; position: fixed; inset: 0; z-index: 100; flex-direction: column; align-items: center; justify-content: center; }
 
-    /* 7. RULE DRAWER */
+    
     #ruleDrawer { 
         transform: translateX(100%); 
         transition: transform 0.3s cubic-bezier(0, 0, 0.2, 1); 
@@ -140,7 +139,7 @@
     .drawer-overlay { display: none; background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(4px); position: fixed; inset: 0; z-index: 50; }
     .drawer-overlay.open { display: block; }
 
-    /* New Points Error Styling */
+    
     .points-error-glow {
         border: 2px solid #ef4444 !important;
         background-color: #fef2f2 !important;
