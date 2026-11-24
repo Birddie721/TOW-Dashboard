@@ -65,36 +65,113 @@ const MOUNT_TO_UNIT_MAP = {
             loadingOverlay.style.display = 'none';
         }
     }
+	
+	function calculateUnitPoints(unit) {
+    const multiplier = unit.strength || 1;
+    let unitTotal = (unit.points || 0) * multiplier;
+
+    // Command upgrades & command magic items
+    unit.command?.forEach(c => {
+    if (!c.active) return;
+
+    unitTotal += (c.points || 0);
+
+    const cmdAddons = [
+        ...(c.equipment || []),
+        ...(c.armor || []),
+        ...(c.options || [])
+    ];
+
+    cmdAddons.forEach(opt => {
+        if (!opt || !opt.active) return;
+
+        if (Array.isArray(opt.options) && opt.options.length > 0) {
+            opt.options.forEach(subOpt => {
+                if (subOpt && subOpt.active) {
+                    const subCost = subOpt.points || 0;
+                    unitTotal += subOpt.perModel ? (subCost * multiplier) : subCost;
+                }
+            });
+        } else {
+            const cost = opt.points || 0;
+            unitTotal += opt.perModel ? (cost * multiplier) : cost;
+        }
+    });
+
+    c.items?.forEach(group => {
+        group.selected?.forEach(item => {
+            unitTotal += (item.points || 0) * (item.amount || 1);
+        });
+        group.magic?.selected?.forEach(item => {
+            unitTotal += (item.points || 0);
+        });
+    });
+
+    c.magic?.selected?.forEach(m => {
+        unitTotal += (m.points || 0);
+    });
+});
+
+    // Equipment, armor, and options (including nested sub-options)
+    const addons = [
+        ...(unit.equipment || []),
+        ...(unit.armor || []),
+        ...(unit.options || [])
+    ];
+
+    addons.forEach(opt => {
+        const stackCount = opt.stackable ? (opt.stackableCount || 0) : 0;
+        const isActive = Boolean(opt.active) || stackCount > 0;
+        if (!isActive) return;
+
+        if (Array.isArray(opt.options) && opt.options.length > 0) {
+            opt.options.forEach(subOpt => {
+                if (subOpt.active) {
+                    const subCost = subOpt.points || 0;
+                    unitTotal += subOpt.perModel ? (subCost * multiplier) : subCost;
+                }
+            });
+        } else {
+            const cost = opt.points || 0;
+            if (opt.stackable) {
+                unitTotal += cost * stackCount;
+            } else {
+                unitTotal += opt.perModel ? (cost * multiplier) : cost;
+            }
+        }
+    });
+
+    // Mounts
+    unit.mounts?.forEach(m => {
+        if (m.active) unitTotal += (m.points || 0);
+    });
+
+    // Magic items / gifts / traits
+    unit.items?.forEach(group => {
+        group.selected?.forEach(item => {
+            if (!item) return;
+            const qty = item.amount || 1;
+            if (item.perModel && unit.strength) {
+                const perModelRate = item.perModelPoints ?? item.points ?? 0;
+                unitTotal += perModelRate * multiplier * qty;
+            } else {
+                unitTotal += (item.points || 0) * qty;
+            }
+        });
+        group.magic?.selected?.forEach(item => {
+            unitTotal += (item.points || 0);
+        });
+    });
+
+    return unitTotal;
+}
 
     function calculateTotalPoints(data) {
         let total = 0;
         ['characters', 'core', 'special', 'rare'].forEach(sec => {
             if (data[sec]) {
                 data[sec].forEach(unit => {
-                    const multiplier = unit.strength || 1;
-                    let unitTotal = (unit.points || 0) * multiplier;
-                    unit.command?.forEach(c => { if(c.active) unitTotal += (c.points || 0); });
-                    const addons = [...(unit.equipment || []), ...(unit.options || [])];
-                    addons.forEach(opt => {
-                        if (opt.active) {
-                            unitTotal += opt.perModel ? (opt.points * multiplier) : opt.points;
-                        }
-                    });
-                    unit.mounts?.forEach(m => { if(m.active) unitTotal += (m.points || 0); });
-                    unit.items?.forEach(group => {
-                        group.selected?.forEach(item => {
-                            unitTotal += (item.points || 0) * (item.amount || 1);
-                        });
-                        group.magic?.selected?.forEach(item => {
-                            unitTotal += (item.points || 0);
-                        });
-                    });
-                    unit.command?.forEach(c => {
-                        if (c.active && c.magic?.selected) {
-                            c.magic.selected.forEach(m => { unitTotal += (m.points || 0); });
-                        }
-                    });
-                    total += unitTotal;
+                    total += calculateUnitPoints(unit);
                 });
             }
         });
@@ -115,15 +192,28 @@ const MOUNT_TO_UNIT_MAP = {
 
         gear.forEach(item => {
             const n = item.name_en.toLowerCase();
+			//console.log(n + " " + unit.specialRules?.name_en);
             if (n.includes('+')) baseSave = parseInt(n); 
             if (n.includes("light armour")) baseSave -= 1;
             else if (n.includes("heavy armour")) baseSave -= 2;
             else if (n.includes("full plate")) baseSave -= 3;
-            if (n.includes("barding") || n.includes("armoured hide")) baseSave -= 1;
+            if (n.includes("barding")) baseSave -= 1;
             if (n.includes("shield")) hasShield = true;
             if (n.includes("hand weapon")) hasHandWeapon = true;
             if (n.includes("great weapon") || n.includes("great hammer")) hasGreatWeapon = true;
         });
+		
+		const rules = [unit.specialRules?.name_en || ""];
+		rules.forEach(item => {
+			if (item.includes('armoured hide')) console.log("Armoured Hide Found");
+			item.split(',').map(r => r.trim()).filter(r => r).forEach(rule => {
+				if (rule.toLowerCase().includes('armoured hide')) {
+					const av = rule.match(/\((\d+)\)/);
+					const val = av ? Number(av[1]) : 0;
+					baseSave -= val;
+				}
+			});
+		});
 
         const saveShield = Math.max(2, baseSave - (hasShield ? 1 : 0));
         const saveGW = Math.max(2, baseSave);
@@ -292,7 +382,63 @@ const MOUNT_TO_UNIT_MAP = {
 				});
                 const commandList = activeCommand.map(c => c.name_en).join(", ");
                 const armor = calculateArmor(unit);
-                const equip = [...(unit.equipment||[]), ...(unit.armor||[]), ...(unit.options||[])].filter(i => i.active).map(i => i.name_en).join(", ");
+                const commandGear = (unit.command || [])
+					.filter(c => c.active)
+					.flatMap(c => [
+						...(c.equipment || []),
+						...(c.armor || []),
+						...(c.options || [])
+					])
+					.filter(i => i && i.active)
+					.flatMap(i => {
+						if (Array.isArray(i.options) && i.options.length > 0) {
+							return i.options.filter(sub => sub && sub.active).map(sub => sub.name_en);
+						}
+						return [i.name_en];
+				})
+					.filter(Boolean);
+
+				
+				function formatUniqueGearList(names) {
+					const seen = new Set();
+					const result = [];
+
+					names.forEach(raw => {
+						if (!raw) return;
+						const display = String(raw).trim();
+						if (!display) return;
+
+						// Normalize case, punctuation/spacing, and trailing 's' so "Crossbows" matches "crossbow"
+						const key = display
+							.toLowerCase()
+							.replace(/\{[^}]*\}/g, "")
+							.replace(/\s+/g, " ")
+							.trim()
+							.replace(/s$/, "");
+
+						if (!seen.has(key)) {
+							seen.add(key);
+							result.push(display);
+						}
+					});
+
+					return result.join(", ");
+}
+				const isGearActive = (i) => Boolean(i && i.active) || (Boolean(i && i.stackable) && (i.stackableCount || 0) > 0);
+
+				const unitGear = [
+					...(unit.equipment || []),
+					...(unit.armor || []),
+					...(unit.options || [])
+				]
+					.filter(isGearActive)
+					.map(i => {
+						if (!i.name_en) return "";
+						return i.stackable ? `${i.name_en} x${i.stackableCount || 0}` : i.name_en;
+					})
+					.filter(Boolean);
+
+				const equip = formatUniqueGearList([...unitGear, ...commandGear]);
 
                 let magicItemsList = [];
                 if (unit.items && Array.isArray(unit.items)) {
@@ -307,10 +453,13 @@ const MOUNT_TO_UNIT_MAP = {
                 });
 
                 const magicHtml = magicItemsList.map(item => {
-                    const itemKey = item.name.toLowerCase().trim();
-                    const itemUrl = rulesMap[itemKey] ? rulesMap[itemKey].url : `magic-item/${itemKey.replace(/\s+/g, '-')}`;
-                    return `<button onclick="openRule('${item.name_en || item.name}', '${itemUrl}')" class="underline decoration-dotted hover:text-[#b59b6d] font-bold">${item.name_en || item.name}</button>`;
-                }).join(', ');
+					const label = item.name_en || item.name || "";
+					const safeLabel = String(label).replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+					const itemKey = (item.name || label).toLowerCase().trim();
+					const slug = itemKey.replace(/['’]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+					const itemUrl = rulesMap[itemKey] ? rulesMap[itemKey].url : `magic-item/${slug}`;
+					return `<button onclick="openRule('${safeLabel}', '${itemUrl}')" class="underline decoration-dotted hover:text-[#b59b6d] font-bold">${label}</button>`;
+				}).join(', ');
 				
 				const showFullProfiles = !isRankAndFile || activeCommand.some(c => {
 					const name = c.name_en.toLowerCase();
@@ -319,6 +468,7 @@ const MOUNT_TO_UNIT_MAP = {
 
                 const unitStatsHtml = getStatsHtml(entry, displayName, armor, false, showFullProfiles);
 				const mainMonsterWeapons = getMonsterWeaponsHtml(displayName);
+				const unitWeaponsHtml = getUnitWeaponsHtml(unit);
 				
 				let rulesArray = [unit.specialRules?.name_en || ""];
 				
@@ -365,28 +515,9 @@ const MOUNT_TO_UNIT_MAP = {
 				}
 
                 const multiplier = unit.strength || 1;
-                let unitTotalPoints = (unit.points || 0) * multiplier;
-                unit.command?.forEach(c => { if(c.active) unitTotalPoints += (c.points || 0); });
-                const addons = [...(unit.equipment || []), ...(unit.options || [])];
-                addons.forEach(opt => {
-                    if (opt.active) {
-                        unitTotalPoints += opt.perModel ? (opt.points * multiplier) : opt.points;
-                    }
-                });
-                unit.mounts?.forEach(m => { if(m.active) unitTotalPoints += (m.points || 0); });
-                unit.items?.forEach(group => {
-                    group.selected?.forEach(item => {
-                        unitTotalPoints += (item.points || 0) * (item.amount || 1);
-                    });
-                    group.magic?.selected?.forEach(item => { unitTotalPoints += (item.points || 0); });
-                });
-                unit.command?.forEach(c => {
-                    if (c.active && c.magic?.selected) {
-                        c.magic.selected.forEach(m => { unitTotalPoints += (m.points || 0); });
-                    }
-                });
+                const unitTotalPoints = calculateUnitPoints(unit);
 				
-				const usmultiplier = STRENGTH_MULTIPLIERS[troopTypeCode] || 1;
+				let usmultiplier = STRENGTH_MULTIPLIERS[troopTypeCode] || 1;
 				if (troopTypeCode === "BE" || troopTypeCode === "MB") {
 					const startingWounds = entry?.stats?.[0]?.W;
 					usmultiplier = parseInt(startingWounds) || 1; 
@@ -418,8 +549,10 @@ const MOUNT_TO_UNIT_MAP = {
                     <div>
 						${unitStatsHtml}
 						<div class="flex flex-wrap gap-1 mt-2">${unitRulesHtml}</div>
-						${mainMonsterWeapons} 
+						${mainMonsterWeapons}
+						${unitWeaponsHtml}						
 					</div>
+					
                     ${mountBlockHtml}
                     ${armor.note ? `<div class="mt-2 text-xs italic text-slate-500">${armor.note}</div>` : ''}
                 `;
@@ -482,3 +615,129 @@ const MOUNT_TO_UNIT_MAP = {
 			</div>
 		`;
 	}
+	
+	function normalizeWeaponLookup(rawName) {
+    return rawName
+        .toLowerCase()
+        .replace(/\{[^}]*\}/g, "")
+        .replace(/\([^)]*\)/g, "")
+        .replace(/\s+/g, " ")
+        .trim();
+}
+
+function isIgnoredWeaponString(name) {
+    return (
+        name.includes("hand weapon") ||
+        name.includes("claws") ||
+        name.includes("fangs") ||
+        name.includes("appendages") ||
+        name.includes("shield") ||
+        name.includes("armour") ||
+        name.includes("armor") ||
+        name.includes("barding")
+    );
+}
+
+function getWeaponCandidates(rawName) {
+    const cleaned = normalizeWeaponLookup(rawName);
+    if (!cleaned || isIgnoredWeaponString(cleaned)) return [];
+
+    const candidates = new Set([cleaned]);
+
+    // Handle common plural -> singular forms ("lances" -> "lance", "great weapons" -> "great weapon")
+    if (cleaned.endsWith("ies")) {
+        candidates.add(cleaned.slice(0, -3) + "y");
+    } else if (cleaned.endsWith("es")) {
+        candidates.add(cleaned.slice(0, -2));
+        candidates.add(cleaned.slice(0, -1));
+    } else if (cleaned.endsWith("s")) {
+        candidates.add(cleaned.slice(0, -1));
+    }
+
+    // Also try singularizing individual words (e.g., "great weapons" -> "great weapon")
+    const singularWords = cleaned
+        .split(" ")
+        .map(word => (word.length > 3 && word.endsWith("s") ? word.slice(0, -1) : word))
+        .join(" ");
+    candidates.add(singularWords);
+
+    return Array.from(candidates);
+}
+
+function getUnitWeaponsHtml(unit) {
+    if (typeof WEAPONS === "undefined" || !WEAPONS) return "";
+	const commandSources = (unit.command || [])
+		.filter(c => c && c.active)
+		.flatMap(c => [
+			...(c.equipment || []),
+			...(c.armor || []),
+			...(c.options || [])
+		]);
+    const isWeaponSourceActive = (item) =>
+		Boolean(item && item.active) || (Boolean(item && item.stackable) && (item.stackableCount || 0) > 0);
+
+	const activeSources = [
+		...(unit.equipment || []),
+		...(unit.armor || []),
+		...(unit.options || []),
+		...commandSources
+	].filter(isWeaponSourceActive);
+
+    const rawEntries = [];
+    activeSources.forEach(item => {
+        if (Array.isArray(item.options) && item.options.length > 0) {
+            item.options.forEach(sub => {
+                if (sub && sub.active && sub.name_en) {
+                    rawEntries.push(sub.name_en);
+                }
+            });
+        } else if (item.name_en) {
+            rawEntries.push(item.name_en);
+        }
+    });
+
+    const matchedWeapons = new Map();
+
+    rawEntries.forEach(entry => {
+        // Split combined strings like "Lances, Shields"
+        entry.split(",").forEach(part => {
+            const candidates = getWeaponCandidates(part);
+            for (const key of candidates) {
+                if (WEAPONS[key]) {
+                    matchedWeapons.set(key, WEAPONS[key]);
+                    break;
+                }
+            }
+        });
+    });
+
+    if (matchedWeapons.size === 0) return "";
+
+    const rows = Array.from(matchedWeapons.values()).map(w => `
+    <tr class="border-b border-slate-100 last:border-0 text-[10px] align-top">
+        <td class="py-1.5 pr-2 font-bold text-slate-700 break-words">${w.name}</td>
+        <td class="py-1.5 px-1 text-center text-slate-500 whitespace-nowrap">${w.R}</td>
+        <td class="py-1.5 px-1 text-center font-bold text-slate-700 whitespace-nowrap">${w.S}</td>
+        <td class="py-1.5 px-1 text-center text-slate-500 whitespace-nowrap">${w.AP}</td>
+        <td class="py-1.5 pl-2 text-right italic text-slate-400 leading-tight break-words">${w.rules || "-"}</td>
+    </tr>
+`).join("");
+
+    return `
+        <div class="mt-3 bg-slate-50/50 rounded-lg p-2 border border-slate-100">
+            <div class="text-[9px] font-black text-slate-400 uppercase tracking-tighter mb-1">Weapon Profiles</div>
+            <table class="w-full table-fixed">
+                <thead>
+                    <tr class="text-[9px] text-slate-400 uppercase text-left border-b border-slate-200">
+                        <th class="pb-1 w-28">Weapon</th>
+						<th class="pb-1 w-16 text-center">R</th>
+						<th class="pb-1 w-14 text-center">S</th>
+						<th class="pb-1 w-14 text-center">AP</th>
+						<th class="pb-1 text-right">Special Rules</th>
+                    </tr>
+                </thead>
+                <tbody>${rows}</tbody>
+            </table>
+        </div>
+    `;
+}
