@@ -3,6 +3,10 @@ const MOUNT_TO_UNIT_MAP = {
 		"wolf chariot": "goblin wolf chariot"
 	};
 	
+const MOUNT_WEAPON_MAP = {
+    "great stag": "mighty antlers"
+};
+	
 	const TROOP_TYPE_NAMES = {
 		"RI": "Regular Infantry",
 		"HI": "Heavy Infantry",
@@ -498,21 +502,23 @@ const MOUNT_TO_UNIT_MAP = {
                 
                 let mountBlockHtml = "";
                 if (mountEntry) {
-					const mountRulesHtml = getRulesHtml(finalMountRules);
-					// We pass 'true' as the last argument to show all profiles (Pallid Handmaidens, Spirit Host, etc.)
-					const mountStatsContent = getStatsHtml(mountEntry, mountName, armor, true, true);
-    
-					// We also check the base mount name for weapons (e.g., "Arachnarok Spider")
-					const baseMountWeapons = getMonsterWeaponsHtml(mountName);
+                    const mountRulesHtml = getRulesHtml(finalMountRules);
+                    // We pass 'true' as the last argument to show all profiles (Pallid Handmaidens, Spirit Host, etc.)
+                    const mountStatsContent = getStatsHtml(mountEntry, mountName, armor, true, true);
 
-					mountBlockHtml = `
-						<div class="mt-4 pt-4 border-t-2 border-dashed border-slate-200">
-							<div class="text-[10px] font-bold text-[#b59b6d] uppercase mb-2 tracking-widest">Mount: ${mountName}</div>
-							${mountStatsContent}
-							<div class="flex flex-wrap gap-1 mt-2">${mountRulesHtml}</div>
-							${baseMountWeapons}
-						</div>`;
-				}
+                    // We also check the base mount name for weapons (e.g., "Arachnarok Spider")
+                    const baseMountWeapons = getMonsterWeaponsHtml(mountName);
+                    const mountWeaponProfile = getMountWeaponHtml(mountName);
+
+                    mountBlockHtml = `
+                        <div class="mt-4 pt-4 border-t-2 border-dashed border-slate-200">
+                            <div class="text-[10px] font-bold text-[#b59b6d] uppercase mb-2 tracking-widest">Mount: ${mountName}</div>
+                            ${mountStatsContent}
+                            <div class="flex flex-wrap gap-1 mt-2">${mountRulesHtml}</div>
+                            ${baseMountWeapons}
+                            ${mountWeaponProfile}
+                        </div>`;
+                }
 
                 const multiplier = unit.strength || 1;
                 const unitTotalPoints = calculateUnitPoints(unit);
@@ -665,6 +671,7 @@ function getWeaponCandidates(rawName) {
 }
 
 function getUnitWeaponsHtml(unit) {
+	
     if (typeof WEAPONS === "undefined" || !WEAPONS) return "";
 	const commandSources = (unit.command || [])
 		.filter(c => c && c.active)
@@ -695,6 +702,41 @@ function getUnitWeaponsHtml(unit) {
             rawEntries.push(item.name_en);
         }
     });
+	
+	const magicWeaponSelections = [];
+    (unit.items || []).forEach(group => {
+        if (Array.isArray(group.selected)) {
+            magicWeaponSelections.push(...group.selected);
+        }
+        if (Array.isArray(group.magic?.selected)) {
+            magicWeaponSelections.push(...group.magic.selected);
+        }
+    });
+    (unit.command || []).forEach(c => {
+        if (c && c.active) {
+            if (Array.isArray(c.magic?.selected)) {
+                magicWeaponSelections.push(...c.magic.selected);
+            }
+            (c.items || []).forEach(group => {
+                if (Array.isArray(group.selected)) {
+                    magicWeaponSelections.push(...group.selected);
+                }
+                if (Array.isArray(group.magic?.selected)) {
+                    magicWeaponSelections.push(...group.magic.selected);
+                }
+            });
+        }
+    });
+
+    magicWeaponSelections.forEach(mItem => {
+        if (!mItem) return;
+        const isMagicWeapon = mItem.type === "weapon" ||
+            Boolean(WEAPONS[(mItem.name || mItem.name_en || "").toLowerCase().trim()]);
+        if (isMagicWeapon) {
+            const label = mItem.name_en || mItem.name;
+            if (label) rawEntries.push(label);
+        }
+    });
 
     const matchedWeapons = new Map();
 
@@ -713,15 +755,7 @@ function getUnitWeaponsHtml(unit) {
 
     if (matchedWeapons.size === 0) return "";
 
-    const rows = Array.from(matchedWeapons.values()).map(w => `
-    <tr class="border-b border-slate-100 last:border-0 text-[10px] align-top">
-        <td class="py-1.5 pr-2 font-bold text-slate-700 break-words">${w.name}</td>
-        <td class="py-1.5 px-1 text-center text-slate-500 whitespace-nowrap">${w.R}</td>
-        <td class="py-1.5 px-1 text-center font-bold text-slate-700 whitespace-nowrap">${w.S}</td>
-        <td class="py-1.5 px-1 text-center text-slate-500 whitespace-nowrap">${w.AP}</td>
-        <td class="py-1.5 pl-2 text-right italic text-slate-400 leading-tight break-words">${w.rules || "-"}</td>
-    </tr>
-`).join("");
+    const rows = Array.from(matchedWeapons.values()).map(weaponToRowsHtml).join("");
 
     return `
         <div class="mt-3 bg-slate-50/50 rounded-lg p-2 border border-slate-100">
@@ -740,4 +774,68 @@ function getUnitWeaponsHtml(unit) {
             </table>
         </div>
     `;
+}
+
+function getMountWeaponHtml(mountName) {
+    if (!mountName || typeof WEAPONS === "undefined" || !WEAPONS) return "";
+
+    const cleanMountName = mountName
+        .replace(/\{([^}]*)\}/g, "$1")
+        .split(".")[0]
+        .toLowerCase()
+        .trim();
+
+    const weaponKey = MOUNT_WEAPON_MAP[cleanMountName];
+    if (!weaponKey) return "";
+
+    const w = WEAPONS[weaponKey];
+    if (!w) return "";
+
+    return `
+        <div class="mt-3 bg-slate-50/50 rounded-lg p-2 border border-slate-100">
+            <div class="text-[9px] font-black text-slate-400 uppercase tracking-tighter mb-1">Weapon Profiles</div>
+            <table class="w-full table-fixed">
+                <thead>
+                    <tr class="text-[9px] text-slate-400 uppercase text-left border-b border-slate-200">
+                        <th class="pb-1 w-28">Weapon</th>
+                        <th class="pb-1 w-16 text-center">R</th>
+                        <th class="pb-1 w-14 text-center">S</th>
+                        <th class="pb-1 w-14 text-center">AP</th>
+                        <th class="pb-1 text-right">Special Rules</th>
+                    </tr>
+                </thead>
+                <tbody>${weaponToRowsHtml(w)}</tbody>
+            </table>
+        </div>
+    `;
+}
+
+function weaponToRowsHtml(w) {
+	if (!w) return "";
+
+	const profileList = Array.isArray(w.profiles) && w.profiles.length > 0
+		? w.profiles
+		: [{ mode: "", R: w.R, S: w.S, AP: w.AP, rules: w.rules }];
+
+	const isMulti = profileList.length > 1;
+
+	return profileList.map((p, idx) => {
+		const label = isMulti && p.mode
+			? `${w.name} <span class="block text-[9px] font-normal text-slate-400">(${p.mode})</span>`
+			: w.name;
+
+		const rowBorder = isMulti && idx < profileList.length - 1
+			? "border-b border-slate-100/80"
+			: "border-b border-slate-100 last:border-0";
+
+		return `
+			<tr class="${rowBorder} text-[10px] align-top">
+				<td class="py-1.5 pr-2 font-bold text-slate-700 break-words">${label}</td>
+				<td class="py-1.5 px-1 text-center text-slate-500 whitespace-nowrap">${p.R ?? "-"}</td>
+				<td class="py-1.5 px-1 text-center font-bold text-slate-700 whitespace-nowrap">${p.S ?? "-"}</td>
+				<td class="py-1.5 px-1 text-center text-slate-500 whitespace-nowrap">${p.AP ?? "-"}</td>
+				<td class="py-1.5 pl-2 text-right italic text-slate-400 leading-tight break-words">${p.rules || "-"}</td>
+			</tr>
+		`;
+	}).join("");
 }
