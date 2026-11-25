@@ -238,3 +238,49 @@
 			border-color: #A0A0A0 !important;
 		}
 	}
+	
+@media (max-width: 640px) {
+    body {
+        padding-bottom: 3rem;
+    }
+
+    .unit-card {
+        padding: 1rem;
+        border-radius: 0.625rem;
+    }
+
+    /* Stack unit title/meta above command, equipment, and magic items on mobile */
+    .unit-header-block {
+        flex-direction: column;
+        gap: 0.65rem;
+    }
+
+    .unit-details-row {
+        max-width: 100% !important;
+        width: 100%;
+        text-align: left !important;
+        padding-top: 0.5rem;
+        border-top: 1px dashed #e2e8f0;
+        font-size: 12px;
+        line-height: 1.45;
+    }
+
+    /* Make the 10-column stat strip fit cleanly without horizontal overflow */
+    .stat-box {
+        padding: 4px 1px;
+        min-width: 0;
+    }
+
+    .stat-label {
+        font-size: 9px;
+        letter-spacing: -0.02em;
+    }
+
+    .stat-val {
+        font-size: 11px;
+    }
+
+    .section-divider {
+        margin: 1.5rem 0 1rem 0;
+    }
+}

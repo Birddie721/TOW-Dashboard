@@ -757,20 +757,25 @@ function getUnitWeaponsHtml(unit) {
 
     const rows = Array.from(matchedWeapons.values()).map(weaponToRowsHtml).join("");
 
+	return renderWeaponTableHtml("Weapon Profiles", rows);
+
+}
+
+function renderWeaponTableHtml(title, bodyRowsHtml) {
     return `
         <div class="mt-3 bg-slate-50/50 rounded-lg p-2 border border-slate-100">
-            <div class="text-[9px] font-black text-slate-400 uppercase tracking-tighter mb-1">Weapon Profiles</div>
-            <table class="w-full table-fixed">
-                <thead>
+            <div class="text-[9px] font-black text-slate-400 uppercase tracking-tighter mb-1.5">${title}</div>
+            <table class="w-full border-collapse block sm:table">
+                <thead class="hidden sm:table-header-group">
                     <tr class="text-[9px] text-slate-400 uppercase text-left border-b border-slate-200">
-                        <th class="pb-1 w-28">Weapon</th>
-						<th class="pb-1 w-16 text-center">R</th>
-						<th class="pb-1 w-14 text-center">S</th>
-						<th class="pb-1 w-14 text-center">AP</th>
-						<th class="pb-1 text-right">Special Rules</th>
+                        <th class="pb-1 pr-2">Weapon</th>
+                        <th class="pb-1 px-1 text-center w-16">R</th>
+                        <th class="pb-1 px-1 text-center w-14">S</th>
+                        <th class="pb-1 px-1 text-center w-14">AP</th>
+                        <th class="pb-1 pl-2 text-right">Special Rules</th>
                     </tr>
                 </thead>
-                <tbody>${rows}</tbody>
+                <tbody class="block sm:table-row-group">${bodyRowsHtml}</tbody>
             </table>
         </div>
     `;
@@ -811,31 +816,37 @@ function getMountWeaponHtml(mountName) {
 }
 
 function weaponToRowsHtml(w) {
-	if (!w) return "";
+    if (!w) return "";
 
-	const profileList = Array.isArray(w.profiles) && w.profiles.length > 0
-		? w.profiles
-		: [{ mode: "", R: w.R, S: w.S, AP: w.AP, rules: w.rules }];
+    const profileList = Array.isArray(w.profiles) && w.profiles.length > 0
+        ? w.profiles
+        : [{ mode: "", R: w.R, S: w.S, AP: w.AP, rules: w.rules }];
 
-	const isMulti = profileList.length > 1;
+    const isMulti = profileList.length > 1;
 
-	return profileList.map((p, idx) => {
-		const label = isMulti && p.mode
-			? `${w.name} <span class="block text-[9px] font-normal text-slate-400">(${p.mode})</span>`
-			: w.name;
+    return profileList.map((p, idx) => {
+        const label = isMulti && p.mode
+            ? `${w.name} <span class="text-[9px] font-normal text-slate-400">(${p.mode})</span>`
+            : w.name;
 
-		const rowBorder = isMulti && idx < profileList.length - 1
-			? "border-b border-slate-100/80"
-			: "border-b border-slate-100 last:border-0";
+        const rowBorder = isMulti && idx < profileList.length - 1
+            ? "border-b border-slate-100/80"
+            : "border-b border-slate-200/80 sm:border-slate-100 last:border-0";
 
-		return `
-			<tr class="${rowBorder} text-[10px] align-top">
-				<td class="py-1.5 pr-2 font-bold text-slate-700 break-words">${label}</td>
-				<td class="py-1.5 px-1 text-center text-slate-500 whitespace-nowrap">${p.R ?? "-"}</td>
-				<td class="py-1.5 px-1 text-center font-bold text-slate-700 whitespace-nowrap">${p.S ?? "-"}</td>
-				<td class="py-1.5 px-1 text-center text-slate-500 whitespace-nowrap">${p.AP ?? "-"}</td>
-				<td class="py-1.5 pl-2 text-right italic text-slate-400 leading-tight break-words">${p.rules || "-"}</td>
-			</tr>
-		`;
-	}).join("");
+        return `
+            <tr class="${rowBorder} text-[10px] block sm:table-row py-1.5 sm:py-0 align-top">
+                <td class="sm:py-1.5 sm:pr-2 font-bold text-slate-700 block sm:table-cell">${label}</td>
+                <td class="sm:py-1.5 sm:px-1 text-left sm:text-center text-slate-500 inline-block sm:table-cell mr-3 sm:mr-0">
+                    <span class="sm:hidden font-bold text-slate-400 uppercase mr-0.5">R:</span>${p.R ?? "-"}
+                </td>
+                <td class="sm:py-1.5 sm:px-1 text-left sm:text-center font-bold text-slate-700 inline-block sm:table-cell mr-3 sm:mr-0">
+                    <span class="sm:hidden font-normal text-slate-400 uppercase mr-0.5">S:</span>${p.S ?? "-"}
+                </td>
+                <td class="sm:py-1.5 sm:px-1 text-left sm:text-center text-slate-500 inline-block sm:table-cell mr-3 sm:mr-0">
+                    <span class="sm:hidden font-normal text-slate-400 uppercase mr-0.5">AP:</span>${p.AP ?? "-"}
+                </td>
+                <td class="sm:py-1.5 sm:pl-2 text-left sm:text-right italic text-slate-400 leading-snug block sm:table-cell mt-0.5 sm:mt-0">${p.rules || "-"}</td>
+            </tr>
+        `;
+    }).join("");
 }
