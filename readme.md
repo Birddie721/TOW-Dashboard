@@ -38,10 +38,9 @@ tow-dashboard/
 
 Because the app runs entirely in the browser using vanilla JavaScript and CDN-hosted Tailwind CSS / Font Awesome, no build step or package installation is required.
 
-1. **Clone or download** the repository to your local machine.
-2. **Open `index.html`** in any modern web browser (or serve the folder locally with an extension like VS Code Live Server).
-3. Click **IMPORT OWB JSON** in the top navigation bar and select an exported `.json` army list from Old World Builder.
-4. Click any **unit name**, **rule pill**, **magic item**, or **weapon** on a unit card to inspect its rules in the slide-over reference panel.
+1. **Navigate to** [TOW-Dashboard](https://birddie721.github.io/TOW-Dashboard) in any modern web browser.
+2. Click **IMPORT OWB JSON** in the top navigation bar and select an exported `.json` army list from Old World Builder.
+3. Click any **unit name**, **rule pill**, **magic item**, or **weapon** on a unit card to inspect its rules in the slide-over reference panel.
 
 ---
 
