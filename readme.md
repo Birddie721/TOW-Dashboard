@@ -6,7 +6,7 @@ A single-page web application for **Warhammer: The Old World (TOW)** players to 
 
 ## Features
 
-* **OWB JSON List Importer:** Upload any Old World Builder `.json` export to dynamically render your army roster grouped by **Characters**, **Core**, **Special**, and **Rare**.
+* **OWB JSON List Importer:** Upload any Old World Builder `.owb.json` export to dynamically render your army roster grouped by **Characters**, **Core**, **Special**, and **Rare**.
 * **Live Rules Index Integration:** Fetches up-to-date unit profiles, troop types, and rule URLs directly from the [Old World Builder Rules Index](https://github.com/nthiebes/old-world-builder).
 * **Slide-Over Rules Reference Drawer:** Click on any unit name, special rule badge, magic item, or weapon name to open its corresponding entry from [`tow.whfb.app`](https://tow.whfb.app) in an embedded side drawer without leaving your army list.
 * **Automatic Calculations:**
