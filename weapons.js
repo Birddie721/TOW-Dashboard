@@ -926,4 +926,357 @@ const WEAPONS = {
         rules: "Magical Attacks, Multiple Wounds (D3)"
     },
 	
+	//Orcs & Goblins
+	"huge gob": {
+        name: "Huge Gob",
+        R: "Combat",
+        S: "S",
+        AP: "-1",
+        rules: "Armour Bane (1)"
+    },
+	"troll vomit": {
+        name: "Troll Vomit",
+        R: "Combat",
+        S: "3",
+        AP: "-2",
+        rules: "A Troll that is in base contact with an enemy model may make one additional attack each turn with this weapon. This attack must be made last, after all other attacks have been made (including Stomp Attacks), but hits automatically."
+    },
+	"battleaxe of the last big waaagh!": {
+        name: "Battleaxe of the Last Big Waaagh!",
+        R: "Combat",
+        S: "S+2",
+        AP: "-2",
+        rules: "Extra Attacks (+D6), Magical Attacks, Requires Two Hands, Strike Last. If a natural 6 is rolled for the Extra Attacks (+D6) special rule, the Battleaxe of the Last Big Waaagh! loses the Extra Attacks (+D6) special rule at the end of the current Combat phase."
+    },
+	"porko's pigstikka": {
+        name: "Porko's Pigstikka",
+        R: "Combat",
+        S: "S+1",
+        AP: "-1",
+        rules: "Armour Bane (1), Magical Attacks. This weapon's Strength and Armour Piercing modifiers apply only during a turn in which the wielder charged. In addition, during a turn in which the wielder charged, Porko's Pigstikka grants them +1 Attack for each rank the enemy unit has."
+    },
+	"da choppiest choppa": {
+        name: "Da Choppiest Choppa",
+        R: "Combat",
+        S: "S+1",
+        AP: "-3",
+        rules: "Magical Attacks"
+    },
+	"wollopa's one hit wunda": {
+        name: "Wollopa's One Hit Wunda",
+        R: "Combat",
+        S: "10",
+        AP: "-3",
+        rules: "Magical Attacks, Strike First. Once per game, during the first round of combat, the wielder of this weapon can use it with this profile. At all other times, this weapon counts as a hand weapon with the Magical Attacks special rule."
+    },
+	//Orc & Goblin Tribes Arcane Journal
+	"da skull smasha": {
+        name: "Da Skull Smasha",
+		profiles: [
+			{
+				mode: "Hammer",
+				R: "Combat",
+				S: "S+2",
+				AP: "-1",
+				rules: "Armour Bane (2), Magical Attacks"
+			},
+			{
+				mode: "Pick",
+				R: "Combat",
+				S: "S",
+				AP: "-2",
+				rules: "Armour Bane (2), Magical Attacks, Multiple Wounds (2)"
+			}
+		]
+    },
+	"bog-wood staff": {
+        name: "Bog-wood Staff",
+        R: "Combat",
+        S: "S+2",
+        AP: "-1",
+        rules: "Magical Attacks, Requires Two Hands. For each unsaved Wound inflicted with this weapon, Ogdruz may recover a lost Wound."
+    },
+	"swamp breath": {
+        name: "Swamp Breath",
+        R: "N/A",
+        S: "3",
+        AP: "-2",
+        rules: "Breath Weapon. Any unit that suffers one or more unsaved wounds from this weapon must make a Panic test as if it had taken heavy casualties."
+    },
+	"ironfist": {
+        name: "Ironfist",
+        R: "Combat",
+        S: "S",
+        AP: "-",
+        rules: "Extra Attacks (1), Requires Two Hands. A model equipped with an Ironfist improves its armour value by 1."
+    },
+	"bigger, choppier axe": {
+        name: "Bigger, Choppier Axe",
+        R: "Combat",
+        S: "S+2",
+        AP: "-2",
+        rules: "Killing Blow, Magical Attacks, Requires Two Hands, Strikes Last"
+    },
+	"martog's best basha": {
+        name: "Martog's Best Basha",
+        R: "Combat",
+        S: "S+1",
+        AP: "-2",
+        rules: "Magical Attacks, Requires Two Hands. The wielder of this weapon has a +1 modifier to its Weapon Skill and Initiative characteristics."
+    },
+	"da akrit axe": {
+        name: "Da Akrit Axe",
+        R: "Combat",
+        S: "S+1",
+        AP: "-",
+        rules: "Armour Bane (1), Magical Attacks. The wielder of Da Akrit Axe may re-roll any failed To Hit made whilst using it. However, this weapon's Strength modifier applies only against enemy models the wielder charged this turn."
+    },
+	"backstabber's blade": {
+        name: "Backstabber's Blade",
+        R: "Combat",
+        S: "S+1",
+        AP: "-1",
+        rules: "Magical Attacks. If the wielder of this weapon is engaged with an enemy's flank arc, it may re-roll any failed rolls To Wound. If the wielder of this weapon is engaged with an enemy's rear arc, it may re-roll any failed rolls To Hit and To Wound."
+    },
+	
+	//Warriors of Chaos
+	"doomfire": {
+        name: "Doomfire",
+        R: "12-60\"",
+        S: "5(10)",
+        AP: "-2(-5)",
+        rules: "Bombardment Cumbersome, Move or Shoot, Multiple Wounds (D3). Any unit that suffers one or more unsaved wounds from this weapon must make a Panic test as if it had taken heavy casualties."
+    },
+	"daemonsword": {
+        name: "Daemonsword",
+        R: "Combat",
+        S: "S+D3",
+        AP: "-2",
+        rules: "Extra Attacks (D3), Magical Attacks, Strike First. Every roll of a natural 1 made when rolling To Hit with this weapon results in a hit which must be resolved against the unit the wielder has joined, rather than the enemy. If the wielder has not joined a unit, this hit must be resolved against the wielder."
+    },
+	"chaos runesword": {
+        name: "Chaos Runesword",
+        R: "Combat",
+        S: "S+1",
+        AP: "-1",
+        rules: "Magical Attacks. The wielder of the Chaos Runesword has a +1 modifier to their Weapon Skill and Initiative characteristics."
+    },
+	"filth mace": {
+        name: "Filth Mace",
+        R: "Combat",
+        S: "S+1",
+        AP: "-1",
+        rules: "Magical Attacks. Any enemy model that suffers one or more unsaved wounds from the Filth Mace must immediately make a Toughness test. If this test is failed, the wounded model suffers a -1 modifier to its Toughness characteristic (to a minimum of 1) until the end of the turn."
+    },
+	"spellthieving sword": {
+        name: "Spellthieving Sword",
+        R: "Combat",
+        S: "S",
+        AP: "-1",
+        rules: "Magical Attacks. Any enemy Wizard that suffers one or more unsaved wounds from the Spellthieving Sword immediately forgets a single spell (determined at random) for the remainder of the game."
+    },
+	//Warriors of Chaos Arcane Journal
+	"storm's wrath": {
+        name: "Storm's Wrath",
+        R: "Combat",
+        S: "S+2",
+        AP: "-1",
+        rules: "Extra Attacks (D3), Magical Attacks, Requires Two Hands. Storm's Wrath's Strength modifier applies only against enemy models the wielder charged this turn."
+    },
+	"obsidian dread-glaive": {
+        name: "Obsidian Dread-Glaive",
+        R: "Combat",
+        S: "S+2",
+        AP: "-1",
+        rules: "Armour Bane (1), Killing Blow, Magical Attacks, Requires Two Hands, Strikes Last."
+    },
+	"dagger of the dark pantheon": {
+        name: "Dagger of the Dark Pantheon",
+        R: "Combat",
+        S: "S",
+        AP: "-2",
+        rules: "Magical Attacks. For each Wound an enemy unit loses as a result of an attack made with the Dagger of the Dark Pantheon, its wielder may apply a +1 modifier to their next Casting or Dispel roll."
+    },
+	"chieftain's blade": {
+        name: "Chieftain's Blade",
+        R: "Combat",
+        S: "S+1",
+        AP: "-1",
+        rules: "Armour Bane (1), Magical Attacks. Whilst engaged in a challenge, the wielder has a +1 modifier to their rolls To Hit."
+    },
+	"taskmaster's scourge": {
+        name: "Taskmaster's Scourge",
+        R: "Combat",
+        S: "S",
+        AP: "-1",
+        rules: "Extra Attacks (1), Magical Attacks. During the Command sub-phase of their turn, the wielder of this weapon may attempt to urge those around them into battle with a lash of their whip by making a Leadership test (using their own Leadership). If the test is passed, until your next Start of Turn sub-phase, this character and any unit they have joined gain a +D3 modifier to their Movement characteristic (to a maximum of 10)."
+    },
+	
+	//Beastmen
+	"primeval club": {
+        name: "Primeval Club",
+        R: "Combat",
+        S: "*",
+        AP: "-3",
+        rules: "Hatred (Empire), Magical Attacks, Poisoned Attacks. The Strength characteristic of the Primeval Club is equal to the current Leadership characteristic of the model that wields it."
+    },
+	"axe of men": {
+        name: "Axe of Men",
+        R: "Combat",
+        S: "S",
+        AP: "-1",
+        rules: "Killing Blow, Magical Attacks. Should the wielder of the Axe of Men kill an enemy character (including champions) in a challenge, they gain the Terror special rule for the remainder of the game."
+    },
+	"mangelder": {
+        name: "Mangelder",
+        R: "Combat",
+        S: "S+1",
+        AP: "-1",
+        rules: "Magical Attacks, Terror. Any enemy unit that suffers one or more unsaved wounds from the Mangelder suffers a -1 modifier to its Leadership characteristic (to a minimum of 2) until the end of the turn."
+    },
+	"hunter's spear": {
+        name: "Hunter's Spear",
+        R: "24\"",
+        S: "6",
+        AP: "-3",
+        rules: "Cumbersome, Magical Attacks, Multiple Wounds (2), Through & Through"
+    },
+	//Beastmen Breyherds Arcane Journal
+	"twisted antlers": {
+        name: "Twisted Antlers",
+        R: "Combat",
+        S: "S",
+        AP: "-2",
+        rules: "Armour Bane (1)"
+    },
+	"the black maul": {
+        name: "The Black Maul",
+        R: "Combat",
+        S: "S+2",
+        AP: "-3",
+        rules: "Extra Attacks (+D6), Magical Attacks. Each time a natural 6 is rolled for the Extra Attacks (+D6) special rule, the wielder of the Black Maul suffers a -1 modifier to their Weapon Skill characteristic (to a minimum of 1, and for the remainder of the game)."
+    },
+	"the axes of khorgor": {
+        name: "The Axes of Khorgor",
+        R: "Combat",
+        S: "S+1",
+        AP: "-2",
+        rules: "Extra Attacks (+1), Magical Attacks, Requires Two Hands. The wielder of the Axes of Khorgor may re-roll any rolls To Wound of a natural 1 made during the Combat phase."
+    },
+	"the brass cleaver": {
+        name: "The Brass Cleaver",
+        R: "Combat",
+        S: "S",
+        AP: "-2",
+        rules: "Magical Attacks. Enemy models are not permitted an armour, Ward, or Regeneration save against an attack made with this weapon if the wielder rolls a natural 6 when making a roll To Wound."
+    },
+	"scimitar of Skultar": {
+        name: "Scimitar of Skultar",
+        R: "Combat",
+        S: "S",
+        AP: "-1",
+        rules: "Armour Bane (1), Magical Attacks, Multiple Wounds (2)"
+    },
+	
+	//Tomb Kings
+	"ritual blade": {
+        name: "Blade of Sea Gold",
+        R: "Combat",
+        S: "S+2",
+        AP: "-3",
+        rules: "Requires Two Hands, Strike Last"
+    },
+	"greatbow": {
+        name: "Greatbow",
+        R: "30\"",
+        S: "6",
+        AP: "-1",
+        rules: "Armour Bane (2), Multiple Wounds (2), Volley Fire"
+    },
+	"screaming skill catapult": {
+        name: "Screaming Skull Catapult",
+        R: "12-60\"",
+        S: "4(8)",
+        AP: "-1(-3)",
+        rules: "Bombardment, Cumbersome, Flaming Attacks, Magical Attacks, Move or Shoot, Multiple Wounds (D3+1), Screaming Skulls. The Multiple Wounds (D3+1) special rule applies only to a single model whose base lies underneath the central hole of the blast template."
+    },
+	"destroyer of eternities": {
+        name: "Destroyer of Eternities",
+        R: "Combat",
+        S: "S+2",
+        AP: "-2",
+        rules: "Killing Blow, Magical Attacks, Requires Two Hands, Strike Last. Rather than attacking normally, the wielder of the Destroyer of Eternities may choose to make a special 'Scything' attack. If they do so, the enemy unit they are directing their attacks against suffers D6 automatic hits, each resolved using the Destroyer of Eternities' profile."
+    },
+	"crook & flail of radiance": {
+        name: "Crook & Flail of Radiance",
+        R: "Combat",
+        S: "S",
+        AP: "-1",
+        rules: "Extra Attacks (+D3), Magical Attacks, Requires Two Hands, Strike First"
+    },
+	"flail of skulls": {
+        name: "Flail of Skulls",
+        R: "Combat",
+        S: "S+3",
+        AP: "-1",
+        rules: "Magical Attacks, Multiple Wounds (2), Requires Two Hands. The Flail of Skulls' Strength modifier applies only against enemy models the wielder charged this turn."
+    },
+	"serpent staff": {
+        name: "Serpent Staff",
+        R: "Combat",
+        S: "S+2",
+        AP: "-2",
+        rules: "Magical Attacks, Poisoned Attacks, Requires Two Hands"
+    },
+	//Tomb Kings of Khemri Arcane Journal
+	"the blessed blade of ptra": {
+        name: "The Blessed Blade of Ptra",
+        R: "Combat",
+        S: "S",
+        AP: "-3",
+        rules: "Flaming Attacks, Magical Attacks, Requires Two Hands. Any enemy model that suffers one or more unsaved wounds from the Blessed Blade of Ptra suffers a -1 modifier to its rolls To Hit, both when shooting and in combat, for the remainder of the game."
+    },
+	"swarming mass": {
+        name: "Swarming Mass",
+        R: "N/A",
+        S: "2",
+        AP: "-",
+        rules: "Breath Weapon. When making a roll To Wound with this weapon, a roll of 4+ is always a success, regardless of the target's Toughness."
+    },
+	"the flail of comquered kings": {
+        name: "The Flail of Conquered Kings",
+        R: "Combat",
+        S: "S+2",
+        AP: "-2",
+        rules: "Magical Attacks, Multiple Wounds (2), Requires Two Hands. The Flail of Conquered Kings' Strength modifier applies only against enemy models the wielder charged this turn."
+    },
+	"blade of antarhak": {
+        name: "Blade of Antarhak",
+        R: "Combat",
+        S: "S+1",
+        AP: "-1",
+        rules: "Magical Attacks. For each Wound an enemy unit loses as a result of an attack made with the Blade of Antarhak, its wielder immediately recovers a single lost Wound."
+    },
+	"the conquerer's blade": {
+        name: "The Conquerer's Blade",
+        R: "Combat",
+        S: "S+2",
+        AP: "-2",
+        rules: "Killing Blow, Magical Attacks, Requires Two Hands, Strike Last. Whilst engaged in a challenge, the bearer of the Conqueror's Blade strikes a Killing Blow if they roll a natural 5 or 6 when making a To Wound roll, rather than the usual 6. In addition, should the wielder slay the enemy General in a challenge, you win a bonus of 100 Victory Points at the end of the game."
+    },
+	"phakth's blades of justice": {
+        name: "Phakth's Blades of Justice",
+        R: "Combat",
+        S: "S",
+        AP: "-1",
+        rules: "Magical Attacks, Requires Two Hands. Phakth's Blades of Justice grant the wielder +1 Attack for each rank an enemy unit the wielder is engaged with has."
+    },
+	"staff of aeons": {
+        name: "Staff of Aeons",
+        R: "Combat",
+        S: "S+2",
+        AP: "-1",
+        rules: "Magical Attacks, Requires Two Hands. Any model that is hit by one or more close combat attacks made using this weapon suffers a -1 modifier to its armour value for the remainder of the game."
+    },
+	
 };

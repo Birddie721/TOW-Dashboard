@@ -430,11 +430,16 @@ const MOUNT_WEAPON_MAP = {
 }
 				const isGearActive = (i) => Boolean(i && i.active) || (Boolean(i && i.stackable) && (i.stackableCount || 0) > 0);
 
+				const NON_GEAR_OPTION_NAMES = new Set(["formation", "mark of chaos", "wizard", "chaotic cult"]);
+
 				const unitGear = [
 					...(unit.equipment || []),
 					...(unit.armor || []),
-					...(unit.options || [])
-				]
+					...(unit.options || []).filter(opt => {
+						const cleanName = (opt?.name_en || "").toLowerCase().trim();
+						return !NON_GEAR_OPTION_NAMES.has(cleanName);
+					})
+]
 					.filter(isGearActive)
 					.map(i => {
 						if (!i.name_en) return "";
@@ -456,14 +461,30 @@ const MOUNT_WEAPON_MAP = {
                     }
                 });
 
-                const magicHtml = magicItemsList.map(item => {
-					const label = item.name_en || item.name || "";
-					const safeLabel = String(label).replace(/\\/g, "\\\\").replace(/'/g, "\\'");
-					const itemKey = (item.name || label).toLowerCase().trim();
-					const slug = itemKey.replace(/['’]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-					const itemUrl = rulesMap[itemKey] ? rulesMap[itemKey].url : `magic-item/${slug}`;
-					return `<button onclick="openRule('${safeLabel}', '${itemUrl}')" class="underline decoration-dotted hover:text-[#b59b6d] font-bold">${label}</button>`;
-				}).join(', ');
+                const groupedMagicItems = new Map();
+
+magicItemsList.forEach(item => {
+    if (!item) return;
+    const label = item.name_en || item.name || "";
+    if (!label) return;
+
+    const key = (item.name || label).toLowerCase().trim();
+    const qty = Number(item.amount) > 0 ? Number(item.amount) : 1;
+
+    if (groupedMagicItems.has(key)) {
+        groupedMagicItems.get(key).qty += qty;
+    } else {
+        groupedMagicItems.set(key, { item, label, key, qty });
+    }
+});
+
+const magicHtml = Array.from(groupedMagicItems.values()).map(({ item, label, key, qty }) => {
+    const safeLabel = String(label).replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+    const slug = key.replace(/['’]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+    const itemUrl = rulesMap[key] ? rulesMap[key].url : `magic-item/${slug}`;
+    const qtySuffix = qty > 1 ? ` <span class="text-slate-500 font-normal">x${qty}</span>` : "";
+    return `<button onclick="openRule('${safeLabel}', '${itemUrl}')" class="underline decoration-dotted hover:text-[#b59b6d] font-bold">${label}${qtySuffix}</button>`;
+}).join(', ');
 				
 				const showFullProfiles = !isRankAndFile || activeCommand.some(c => {
 					const name = c.name_en.toLowerCase();
@@ -471,8 +492,8 @@ const MOUNT_WEAPON_MAP = {
 				});
 
                 const unitStatsHtml = getStatsHtml(entry, displayName, armor, false, showFullProfiles);
-				const mainMonsterWeapons = getMonsterWeaponsHtml(displayName);
-				const unitWeaponsHtml = getUnitWeaponsHtml(unit);
+				const mainMonsterWeapons = getMonsterWeaponsHtml(displayName, rulesMap);
+				const unitWeaponsHtml = getUnitWeaponsHtml(unit, rulesMap);
 				
 				let rulesArray = [unit.specialRules?.name_en || ""];
 				
@@ -481,34 +502,48 @@ const MOUNT_WEAPON_MAP = {
 
 				if (unit.options) {
 					unit.options.forEach(opt => {
-						// Check if the top-level option is active (e.g., Mark of Chaos)
 						if (opt.active) {
-							// Check for sub-options (this is where Mark of Khorne lives)
 							if (opt.options) {
 								opt.options.forEach(subOpt => {
-									if (subOpt.active) rulesArray.push(subOpt.name_en);
+									const subName = (subOpt.name_en || "").trim();
+									if (subOpt.active && subName && subName.toLowerCase() !== "none") {
+										rulesArray.push(subName);
+									}
 								});
 							} else {
-								// If there are no sub-options, just add the name if it's active
-								rulesArray.push(opt.name_en);
+								const optName = (opt.name_en || "").trim();
+								if (optName && optName.toLowerCase() !== "none") {
+									rulesArray.push(optName);
+								}
 							}
 						}
 					});
 				}
+				
+				if (unit.activeLore) {
+					const formattedLore = String(unit.activeLore)
+						.replace(/[-_]+/g, " ")
+						.trim()
+						.replace(/\b\w/g, ch => ch.toUpperCase());
 
-				// 3. Clean up the array and join into a string for the existing helper
+					if (formattedLore) {
+						rulesArray.push(formattedLore);
+					}
+				}
+
+				
 				const combinedRulesString = rulesArray.filter(r => r).join(', ');
                 const unitRulesHtml = getRulesHtml(combinedRulesString);
                 
                 let mountBlockHtml = "";
                 if (mountEntry) {
                     const mountRulesHtml = getRulesHtml(finalMountRules);
-                    // We pass 'true' as the last argument to show all profiles (Pallid Handmaidens, Spirit Host, etc.)
+                    
                     const mountStatsContent = getStatsHtml(mountEntry, mountName, armor, true, true);
 
-                    // We also check the base mount name for weapons (e.g., "Arachnarok Spider")
-                    const baseMountWeapons = getMonsterWeaponsHtml(mountName);
-                    const mountWeaponProfile = getMountWeaponHtml(mountName);
+
+                    const baseMountWeapons = getMonsterWeaponsHtml(mountName, rulesMap);
+                    const mountWeaponProfile = getMountWeaponHtml(mountName, rulesMap);
 
                     mountBlockHtml = `
                         <div class="mt-4 pt-4 border-t-2 border-dashed border-slate-200">
@@ -583,44 +618,55 @@ const MOUNT_WEAPON_MAP = {
         document.getElementById('ruleFrame').src = ""; 
     }
 	
-	function getMonsterWeaponsHtml(targetName) {
-		const lowerName = targetName.toLowerCase().trim();
-		const weaponKeys = MONSTERS[lowerName];
-    
-		if (!weaponKeys) return "";
+function getMonsterWeaponsHtml(targetName, rulesMap) {
+    if (typeof MONSTERS === "undefined" || typeof MONSTER_ATTACKS === "undefined") return "";
 
-		const rows = weaponKeys.map(wKey => {
-			const stats = MONSTER_ATTACKS[wKey];
-			if (!stats) return "";
-			return `
-				<tr class="border-b border-slate-100 last:border-0 text-[10px]">
-					<td class="py-1 font-bold text-slate-700 capitalize">${wKey}</td>
-					<td class="py-1 text-center text-slate-500">${stats.R}</td>
-					<td class="py-1 text-center font-bold text-slate-700">${stats.S}</td>
-					<td class="py-1 text-center text-slate-500">${stats.AP}</td>
-					<td class="py-1 text-right italic text-slate-400 leading-tight">${stats.rules || '-'}</td>
-				</tr>
-			`;
-		}).join('');
+    const lowerName = targetName.toLowerCase().trim();
+    const weaponKeys = MONSTERS[lowerName];
 
-		return `
-			<div class="mt-3 bg-slate-50/50 rounded-lg p-2 border border-slate-100">
-				<div class="text-[9px] font-black text-slate-400 uppercase tracking-tighter mb-1">Natural Weapons</div>
-				<table class="w-full">
-					<thead>
-						<tr class="text-[9px] text-slate-400 uppercase text-left border-b border-slate-200">
-							<th class="pb-1">Weapon</th>
-							<th class="pb-1 text-center">R</th>
-							<th class="pb-1 text-center">S</th>
-							<th class="pb-1 text-center">AP</th>
-							<th class="pb-1 text-right">Special Rules</th>
-						</tr>
-					</thead>
-					<tbody>${rows}</tbody>
-				</table>
-			</div>
-		`;
-	}
+    if (!weaponKeys) return "";
+
+    const rows = weaponKeys.map(wKey => {
+        const stats = MONSTER_ATTACKS[wKey];
+        if (!stats) return "";
+
+        const displayAttackName = wKey.replace(/\b\w/g, ch => ch.toUpperCase());
+        const safeName = displayAttackName.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+        const ruleUrl = findRuleUrl(rulesMap, wKey, displayAttackName);
+
+        const nameHtml = ruleUrl
+            ? `<span onclick="openRule('${safeName}', '${ruleUrl}')" class="cursor-pointer hover:text-[#b59b6d] transition">${displayAttackName}</span>`
+            : displayAttackName;
+
+        return `
+            <tr class="border-b border-slate-100 last:border-0 text-[10px]">
+                <td class="py-1 font-bold text-slate-700">${nameHtml}</td>
+                <td class="py-1 text-center text-slate-500">${stats.R}</td>
+                <td class="py-1 text-center font-bold text-slate-700">${stats.S}</td>
+                <td class="py-1 text-center text-slate-500">${stats.AP}</td>
+                <td class="py-1 text-right italic text-slate-400 leading-tight">${stats.rules || '-'}</td>
+            </tr>
+        `;
+    }).join('');
+
+    return `
+        <div class="mt-3 bg-slate-50/50 rounded-lg p-2 border border-slate-100">
+            <div class="text-[9px] font-black text-slate-400 uppercase tracking-tighter mb-1">Natural Weapons</div>
+            <table class="w-full">
+                <thead>
+                    <tr class="text-[9px] text-slate-400 uppercase text-left border-b border-slate-200">
+                        <th class="pb-1">Weapon</th>
+                        <th class="pb-1 text-center">R</th>
+                        <th class="pb-1 text-center">S</th>
+                        <th class="pb-1 text-center">AP</th>
+                        <th class="pb-1 text-right">Special Rules</th>
+                    </tr>
+                </thead>
+                <tbody>${rows}</tbody>
+            </table>
+        </div>
+    `;
+}
 	
 	function normalizeWeaponLookup(rawName) {
     return rawName
@@ -670,25 +716,26 @@ function getWeaponCandidates(rawName) {
     return Array.from(candidates);
 }
 
-function getUnitWeaponsHtml(unit) {
-	
+function getUnitWeaponsHtml(unit, rulesMap) {
     if (typeof WEAPONS === "undefined" || !WEAPONS) return "";
-	const commandSources = (unit.command || [])
-		.filter(c => c && c.active)
-		.flatMap(c => [
-			...(c.equipment || []),
-			...(c.armor || []),
-			...(c.options || [])
-		]);
-    const isWeaponSourceActive = (item) =>
-		Boolean(item && item.active) || (Boolean(item && item.stackable) && (item.stackableCount || 0) > 0);
 
-	const activeSources = [
-		...(unit.equipment || []),
-		...(unit.armor || []),
-		...(unit.options || []),
-		...commandSources
-	].filter(isWeaponSourceActive);
+    const commandSources = (unit.command || [])
+        .filter(c => c && c.active)
+        .flatMap(c => [
+            ...(c.equipment || []),
+            ...(c.armor || []),
+            ...(c.options || [])
+        ]);
+
+    const isWeaponSourceActive = (item) =>
+        Boolean(item && item.active) || (Boolean(item && item.stackable) && (item.stackableCount || 0) > 0);
+
+    const activeSources = [
+        ...(unit.equipment || []),
+        ...(unit.armor || []),
+        ...(unit.options || []),
+        ...commandSources
+    ].filter(isWeaponSourceActive);
 
     const rawEntries = [];
     activeSources.forEach(item => {
@@ -702,8 +749,8 @@ function getUnitWeaponsHtml(unit) {
             rawEntries.push(item.name_en);
         }
     });
-	
-	const magicWeaponSelections = [];
+
+    const magicWeaponSelections = [];
     (unit.items || []).forEach(group => {
         if (Array.isArray(group.selected)) {
             magicWeaponSelections.push(...group.selected);
@@ -741,12 +788,11 @@ function getUnitWeaponsHtml(unit) {
     const matchedWeapons = new Map();
 
     rawEntries.forEach(entry => {
-        // Split combined strings like "Lances, Shields"
         entry.split(",").forEach(part => {
             const candidates = getWeaponCandidates(part);
             for (const key of candidates) {
                 if (WEAPONS[key]) {
-                    matchedWeapons.set(key, WEAPONS[key]);
+                    matchedWeapons.set(key, { key, weapon: WEAPONS[key] });
                     break;
                 }
             }
@@ -755,10 +801,11 @@ function getUnitWeaponsHtml(unit) {
 
     if (matchedWeapons.size === 0) return "";
 
-    const rows = Array.from(matchedWeapons.values()).map(weaponToRowsHtml).join("");
+    const rows = Array.from(matchedWeapons.values())
+        .map(({ key, weapon }) => weaponToRowsHtml(weapon, key, rulesMap))
+        .join("");
 
-	return renderWeaponTableHtml("Weapon Profiles", rows);
-
+    return renderWeaponTableHtml("Weapon Profiles", rows);
 }
 
 function renderWeaponTableHtml(title, bodyRowsHtml) {
@@ -781,7 +828,7 @@ function renderWeaponTableHtml(title, bodyRowsHtml) {
     `;
 }
 
-function getMountWeaponHtml(mountName) {
+function getMountWeaponHtml(mountName, rulesMap) {
     if (!mountName || typeof WEAPONS === "undefined" || !WEAPONS) return "";
 
     const cleanMountName = mountName
@@ -809,14 +856,21 @@ function getMountWeaponHtml(mountName) {
                         <th class="pb-1 text-right">Special Rules</th>
                     </tr>
                 </thead>
-                <tbody>${weaponToRowsHtml(w)}</tbody>
+                <tbody>${weaponToRowsHtml(w, weaponKey, rulesMap)}</tbody>
             </table>
         </div>
     `;
 }
 
-function weaponToRowsHtml(w) {
+function weaponToRowsHtml(w, weaponKey, rulesMap) {
     if (!w) return "";
+
+    const ruleUrl = findRuleUrl(rulesMap, weaponKey, w.name);
+    const safeName = String(w.name).replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+
+    const nameHtml = ruleUrl
+        ? `<span onclick="openRule('${safeName}', '${ruleUrl}')" class="cursor-pointer hover:text-[#b59b6d] transition">${w.name}</span>`
+        : w.name;
 
     const profileList = Array.isArray(w.profiles) && w.profiles.length > 0
         ? w.profiles
@@ -826,8 +880,8 @@ function weaponToRowsHtml(w) {
 
     return profileList.map((p, idx) => {
         const label = isMulti && p.mode
-            ? `${w.name} <span class="text-[9px] font-normal text-slate-400">(${p.mode})</span>`
-            : w.name;
+            ? `${nameHtml} <span class="text-[9px] font-normal text-slate-400">(${p.mode})</span>`
+            : nameHtml;
 
         const rowBorder = isMulti && idx < profileList.length - 1
             ? "border-b border-slate-100/80"
@@ -849,4 +903,31 @@ function weaponToRowsHtml(w) {
             </tr>
         `;
     }).join("");
+}
+
+function findRuleUrl(rulesMap, ...names) {
+    if (!rulesMap) return null;
+
+    for (const raw of names) {
+        if (!raw) continue;
+        const base = String(raw)
+            .toLowerCase()
+            .replace(/\{[^}]*\}/g, "")
+            .replace(/\([^)]*\)/g, "")
+            .replace(/\s+/g, " ")
+            .trim();
+
+        const candidates = [
+            base,
+            base.replace(/s$/, ""),
+            base.replace(/es$/, "")
+        ];
+
+        for (const key of candidates) {
+            if (rulesMap[key]?.url) {
+                return rulesMap[key].url;
+            }
+        }
+    }
+    return null;
 }
